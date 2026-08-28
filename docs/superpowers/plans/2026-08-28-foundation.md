@@ -42,15 +42,15 @@
 
 **Files:** `database/migrations/001_initial_schema.sql`, `database/README.md`
 
-- [ ] Criar `users`, `categories`, `transactions`, `budgets` e `financial_goals`.
-- [ ] Aplicar PKs, FKs, índices, checks e unicidade.
-- [ ] Usar FKs compostas para garantir propriedade de registros relacionados.
-- [ ] Documentar criação da base e execução da migration.
+- [x] Criar `users`, `categories`, `transactions`, `budgets` e `financial_goals`.
+- [x] Aplicar PKs, FKs, índices, checks e unicidade.
+- [x] Usar FKs compostas para garantir propriedade de registros relacionados.
+- [x] Documentar criação da base e execução da migration.
 
 ### Task 4: Documentação de execução
 
 **Files:** `README.md`
 
-- [ ] Documentar requisitos e comandos de instalação.
-- [ ] Documentar frontend, API de health, testes e criação do banco.
-- [ ] Abrir Pull Request draft vinculando #1, #2 e #3.
+- [x] Documentar requisitos e comandos de instalação.
+- [x] Documentar frontend, API de health, testes e criação do banco.
+- [x] Preparar Pull Request draft vinculando #1, #2 e #3.
