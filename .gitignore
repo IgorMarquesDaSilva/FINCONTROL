@@ -1,0 +1,25 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# PHP / Composer
+/vendor/
+composer.phar
+.phpunit.result.cache
+
+# Logs and runtime
+*.log
+/tmp/
+/storage/cache/
+/storage/logs/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local database dumps
+*.sql.gz
+*.dump
