@@ -1,135 +1,120 @@
 # FINCONTROL
 
-Aplicação de controle financeiro pessoal construída com foco em PHP, HTML, CSS, JavaScript e MySQL.
+Aplicação de controle financeiro pessoal construída com PHP, HTML, CSS, JavaScript e MySQL.
 
-## Tecnologias da base
+## Acesso rápido com XAMPP
 
-- PHP 8.2+
-- MySQL 8.0+
-- PDO / PDO MySQL
-- HTML5
-- CSS3
-- JavaScript ES2022+
-- Composer para autoload e comandos de projeto
+A estrutura foi preparada para que o site abra diretamente pela raiz do projeto.
 
-## Estrutura
+### 1. Coloque o projeto no htdocs
+
+O caminho recomendado no Windows é:
 
 ```text
-FINCONTROL/
-├── backend/          # API e regras de negócio em PHP
-│   ├── public/       # ponto de entrada HTTP
-│   ├── scripts/      # comandos de desenvolvimento
-│   ├── src/          # código PHP da aplicação
-│   └── tests/        # testes automatizados
-├── database/         # migrations e documentação MySQL
-├── docs/             # padrões e decisões técnicas
-├── frontend/         # HTML, CSS e JavaScript
-├── .env.example      # exemplo seguro de configuração
-└── composer.json
+C:\xampp\htdocs\FINCONTROL
 ```
 
-## Preparando o ambiente
+### 2. Inicie o XAMPP
 
-### 1. Requisitos
+Abra o XAMPP Control Panel e inicie:
 
-Tenha instalados PHP 8.2 ou superior, MySQL 8.0 ou superior e a extensão `pdo_mysql` do PHP. Composer é recomendado para gerar o autoload PSR-4, mas a base possui um fallback simples para desenvolvimento inicial.
+- Apache
+- MySQL
 
-### 2. Configure as variáveis locais
+### 3. Configure o ambiente
 
-Linux/macOS:
+Na raiz do projeto, copie `.env.example` para `.env`.
 
-```bash
-cp .env.example .env
-```
-
-Windows PowerShell:
+No PowerShell:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Edite apenas o `.env`. Ele está ignorado pelo Git e nunca deve ser enviado ao repositório.
+O exemplo já usa a configuração padrão do XAMPP:
 
-### 3. Crie o MySQL
-
-Siga `database/README.md` e aplique:
-
-```bash
-mysql -u fincontrol -p fincontrol < database/migrations/001_initial_schema.sql
+```text
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=fincontrol
+DB_USERNAME=root
+DB_PASSWORD=
 ```
 
-### 4. Valide a configuração PHP
+Se o seu MySQL possuir senha, altere somente o arquivo `.env`.
 
-```bash
-php backend/tests/run.php
+### 4. Crie o banco no phpMyAdmin
+
+Abra:
+
+```text
+http://localhost/phpmyadmin/
 ```
 
-Com o banco criado e o `.env` preenchido:
+Entre em **Importar**, selecione:
 
-```bash
-php backend/scripts/check-database.php
+```text
+database/fincontrol_xampp.sql
 ```
 
-### 5. Inicie a API
+O arquivo cria automaticamente o banco `fincontrol` e as tabelas iniciais.
 
-```bash
-php -S localhost:8080 -t backend/public backend/public/index.php
+### 5. Abra o FINCONTROL
+
+Acesse diretamente:
+
+```text
+http://localhost/FINCONTROL/
 ```
 
-Teste em `http://localhost:8080/health`.
+Não é necessário acessar `/frontend` nem executar `php -S`.
 
-Resposta esperada:
+## Estrutura
 
-```json
-{
-  "status": "ok",
-  "service": "FINCONTROL API"
-}
+```text
+FINCONTROL/
+├── index.php          # entrada principal do site
+├── assets/            # CSS e JavaScript do frontend
+├── backend/           # API e regras de negócio PHP
+├── database/          # banco, migrations e instalador do XAMPP
+├── docs/              # documentação técnica
+├── .env.example       # configuração local de exemplo
+├── .htaccess          # configuração básica do Apache
+└── composer.json
 ```
 
-### 6. Inicie o frontend
+## Validação pelo PHP do XAMPP
 
-Em outro terminal:
+Sem adicionar PHP ao PATH do Windows, use:
 
-```bash
-php -S localhost:5173 -t frontend
+```powershell
+C:\xampp\php\php.exe backend\tests\run.php
+C:\xampp\php\php.exe backend\tests\xampp.php
+C:\xampp\php\php.exe backend\scripts\check-database.php
 ```
-
-Abra `http://localhost:5173`.
-
-## Composer
-
-Se utilizar Composer:
-
-```bash
-composer install
-composer test
-composer db:check
-composer serve
-```
-
-O projeto não depende de framework PHP nesta fase.
 
 ## Banco de dados
 
-A primeira migration cria:
+A base inicial contém:
 
-- usuários;
-- categorias personalizadas;
-- transações, unificando receitas e despesas;
-- orçamentos mensais;
-- metas financeiras.
+- `users`;
+- `categories`;
+- `transactions` para receitas e despesas;
+- `budgets`;
+- `financial_goals`.
 
-As FKs compostas entre registros financeiros e categorias ajudam a impedir que um registro de um usuário referencie dados pertencentes a outro usuário.
+Valores financeiros usam `DECIMAL(15,2)` e as relações com `user_id` ajudam a impedir associação de dados entre usuários diferentes.
 
-## Fluxo Git
+## Tecnologias
 
-Não desenvolva diretamente na `main`. Consulte `docs/CONTRIBUTING.md` para padrões de branches, Conventional Commits, Pull Requests e segurança de arquivos sensíveis.
+- PHP 8.2+
+- MySQL 8.0+ / MariaDB compatível
+- PDO MySQL
+- HTML5
+- CSS3
+- JavaScript
+- Apache (XAMPP no ambiente local)
 
-## Issues de fundação
+## Desenvolvimento
 
-Esta estrutura foi criada como base para:
-
-- #1 — Estruturar repositório e fluxo de desenvolvimento;
-- #2 — Preparar ambiente de desenvolvimento;
-- #3 — Modelar e criar o banco de dados.
+Consulte `docs/CONTRIBUTING.md` antes de desenvolver novas funcionalidades. O projeto utiliza branches, Pull Requests e Conventional Commits.
