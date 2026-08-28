@@ -12,8 +12,8 @@
     <section class="hero" aria-labelledby="title">
       <p class="eyebrow">FINCONTROL</p>
       <h1 id="title">Sua base para organizar a vida financeira.</h1>
-      <p>Projeto inicial em HTML, CSS, JavaScript, PHP e MySQL.</p>
-      <span id="app-status" class="status">Frontend carregado.</span>
+      <p>Projeto em PHP, HTML, CSS, JavaScript e MySQL.</p>
+      <span id="app-status" class="status">FINCONTROL carregado.</span>
     </section>
   </main>
   <script src="assets/js/app.js" defer></script>
