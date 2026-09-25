@@ -1,6 +1,6 @@
-const app = require('./app');
-const env = require('./config/env');
-const pool = require('./config/database');
+const app = require('./src/app');
+const env = require('./src/config/env');
+const pool = require('./src/config/database');
 
 const server = app.listen(env.port, () => {
   console.log(`FINCONTROL disponivel em http://localhost:${env.port}`);
