@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "description": "Plataforma de educacao e organizacao financeira para jovens.",
-  "main": "src/server.js",
+  "main": "server.js",
   "scripts": {
-    "dev": "node --watch src/server.js",
-    "start": "node src/server.js",
+    "dev": "node --watch server.js",
+    "start": "node server.js",
     "test": "node --test",
     "test:integration": "node --test integration/auth.integration.js",
     "db:check": "node scripts/check-database.js"

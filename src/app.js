@@ -3,6 +3,7 @@ const express = require('express');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/auth.routes');
+const incomeRoutes = require('./routes/income.routes');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -28,6 +29,7 @@ app.get('/api/health', (_request, response) => {
   response.json({ status: 'ok', service: 'FINCONTROL API' });
 });
 app.use('/api/auth', authRoutes);
+app.use('/api/incomes', incomeRoutes);
 app.use(express.static(publicDirectory, { extensions: ['html'] }));
 
 app.use('/api', notFound);

@@ -6,8 +6,27 @@ const loginHeading = document.querySelector('[data-login-heading]');
 const registerHeading = document.querySelector('[data-register-heading]');
 const toast = document.querySelector('[data-toast]');
 const sidebar = document.querySelector('[data-sidebar]');
+const incomeForm = document.querySelector('[data-income-form]');
+const incomeList = document.querySelector('[data-income-list]');
+const balanceTotal = document.querySelector('[data-balance-total]');
+const balanceHelper = document.querySelector('[data-balance-helper]');
+const monthIncomeTotal = document.querySelector('[data-month-income-total]');
+const incomeHelper = document.querySelector('[data-income-helper]');
 
 let toastTimer;
+let incomes = [];
+
+const currencyFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
+
+const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: 'UTC',
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+});
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -33,6 +52,94 @@ function showToast(message, type = 'success') {
   toast.classList.toggle('is-error', type === 'error');
   toast.hidden = false;
   toastTimer = setTimeout(() => { toast.hidden = true; }, 4200);
+}
+
+function formatCurrency(value) {
+  return currencyFormatter.format(Number(value) || 0);
+}
+
+function formatDate(value) {
+  return dateFormatter.format(new Date(`${value}T00:00:00.000Z`));
+}
+
+function todayIsoDate() {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  return now.toISOString().slice(0, 10);
+}
+
+function currentMonthKey() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function pluralizeIncome(count) {
+  return `${count} receita${count === 1 ? '' : 's'} cadastrada${count === 1 ? '' : 's'}`;
+}
+
+function setDefaultIncomeDate() {
+  const dateInput = incomeForm.elements.namedItem('transactionDate');
+  if (!dateInput.value) dateInput.value = todayIsoDate();
+}
+
+function updateIncomeSummary() {
+  const total = incomes.reduce((sum, income) => sum + Number(income.amount || 0), 0);
+  const monthKey = currentMonthKey();
+  const monthTotal = incomes
+    .filter((income) => String(income.transactionDate || '').startsWith(monthKey))
+    .reduce((sum, income) => sum + Number(income.amount || 0), 0);
+
+  balanceTotal.textContent = formatCurrency(total);
+  monthIncomeTotal.textContent = formatCurrency(monthTotal);
+  balanceHelper.textContent = incomes.length ? pluralizeIncome(incomes.length) : 'Comece adicionando uma receita';
+  incomeHelper.textContent = monthTotal > 0 ? 'Receitas registradas neste mês' : 'Nenhuma entrada neste mês';
+}
+
+function renderIncomes() {
+  incomeList.replaceChildren();
+
+  if (!incomes.length) {
+    const emptyState = document.createElement('div');
+    emptyState.className = 'empty-state empty-state--compact';
+    emptyState.innerHTML = '<span aria-hidden="true">↕</span><h3>Seu histórico começa aqui</h3><p>Cadastre sua primeira receita para acompanhar quanto entra no mês.</p>';
+    incomeList.append(emptyState);
+    updateIncomeSummary();
+    return;
+  }
+
+  incomes.forEach((income) => {
+    const item = document.createElement('div');
+    item.className = 'income-item';
+
+    const details = document.createElement('div');
+    const description = document.createElement('strong');
+    const meta = document.createElement('small');
+    const category = document.createElement('span');
+    description.textContent = income.description;
+    category.className = 'income-item__category';
+    category.textContent = income.category?.name || 'Receita';
+    meta.append(category, ` - ${formatDate(income.transactionDate)}`);
+    details.append(description, meta);
+
+    const amount = document.createElement('span');
+    amount.className = 'income-item__amount';
+    amount.textContent = formatCurrency(income.amount);
+
+    item.append(details, amount);
+    incomeList.append(item);
+  });
+
+  updateIncomeSummary();
+}
+
+async function loadIncomes() {
+  try {
+    const payload = await api('/api/incomes');
+    incomes = payload.incomes || [];
+    renderIncomes();
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
 }
 
 function clearErrors(form) {
@@ -82,6 +189,8 @@ function showDashboard(user) {
   authView.hidden = true;
   dashboardView.hidden = false;
   document.title = `Visão geral — FINCONTROL`;
+  setDefaultIncomeDate();
+  void loadIncomes();
 }
 
 document.querySelectorAll('[data-show-register]').forEach((button) => {
@@ -160,12 +269,55 @@ registerForm.addEventListener('submit', async (event) => {
   }
 });
 
+incomeForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  clearErrors(incomeForm);
+  const formData = new FormData(incomeForm);
+  const data = {
+    description: String(formData.get('description') || '').trim(),
+    amount: String(formData.get('amount') || '').trim(),
+    transactionDate: String(formData.get('transactionDate') || '').trim(),
+    categoryName: String(formData.get('categoryName') || '').trim(),
+  };
+  const clientErrors = {};
+
+  if (data.description.length < 2) clientErrors.description = 'Informe uma descricao.';
+  if (!data.amount || Number(data.amount) <= 0) clientErrors.amount = 'Informe um valor maior que zero.';
+  if (!data.transactionDate) clientErrors.transactionDate = 'Informe a data da receita.';
+  if (data.categoryName.length < 2) clientErrors.categoryName = 'Informe uma categoria.';
+
+  if (Object.keys(clientErrors).length) {
+    displayErrors(incomeForm, clientErrors);
+    return;
+  }
+
+  try {
+    setLoading(incomeForm, true);
+    const payload = await api('/api/incomes', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    incomes = [payload.income, ...incomes.filter((income) => income.id !== payload.income.id)].slice(0, 20);
+    incomeForm.reset();
+    setDefaultIncomeDate();
+    renderIncomes();
+    showToast('Receita cadastrada com sucesso.');
+  } catch (error) {
+    displayErrors(incomeForm, error.fields);
+    showToast(error.message, 'error');
+  } finally {
+    setLoading(incomeForm, false);
+  }
+});
+
 document.querySelector('[data-logout]').addEventListener('click', async () => {
   try {
     await api('/api/auth/logout', { method: 'POST', body: '{}' });
   } catch (_error) {
     // A interface encerra a sessão mesmo se a resposta for interrompida.
   }
+  incomes = [];
+  renderIncomes();
   showAuth('login');
   showToast('Você saiu da sua conta.');
 });
@@ -179,6 +331,13 @@ document.querySelector('[data-menu-open]').addEventListener('click', () => setMe
 document.querySelectorAll('[data-menu-close]').forEach((button) => button.addEventListener('click', () => setMenu(false)));
 document.querySelectorAll('.sidebar-link').forEach((link) => link.addEventListener('click', () => setMenu(false)));
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setMenu(false); });
+document.querySelectorAll('[data-focus-income-form]').forEach((button) => {
+  button.addEventListener('click', () => {
+    setMenu(false);
+    incomeForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    incomeForm.elements.namedItem('description')?.focus();
+  });
+});
 document.querySelectorAll('[data-demo-action]').forEach((button) => {
   button.addEventListener('click', () => showToast('Essa função entra na próxima etapa do projeto.'));
 });

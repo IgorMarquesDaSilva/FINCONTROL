@@ -157,7 +157,18 @@ button { color: inherit; }
 .content-card__heading span { color: var(--green-dark); font-size: .62rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
 .content-card__heading h2 { margin: 5px 0 0; font-size: .98rem; }
 .content-card__heading button { color: var(--green-dark); border: 0; background: transparent; font-size: .68rem; font-weight: 700; cursor: pointer; }
+.income-form { margin-top: 22px; }
+.income-form__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+.income-submit { margin-top: 17px; }
+.income-list { display: grid; gap: 0; margin-top: 24px; border-top: 1px solid var(--line); }
+.income-item { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 15px 0; border-bottom: 1px solid var(--line); }
+.income-item strong, .income-item small { display: block; }
+.income-item strong { font-size: .82rem; }
+.income-item small { margin-top: 4px; color: var(--muted); font-size: .66rem; }
+.income-item__amount { color: var(--green-dark); font-size: .86rem; font-weight: 850; white-space: nowrap; }
+.income-item__category { color: #7a8b92; }
 .empty-state { display: grid; min-height: 225px; place-items: center; align-content: center; text-align: center; }
+.empty-state--compact { min-height: 190px; border-bottom: 1px solid var(--line); }
 .empty-state > span { display: grid; width: 48px; height: 48px; place-items: center; color: var(--green-dark); border-radius: 50%; background: var(--green-soft); font-size: 1.2rem; }
 .empty-state h3 { margin: 13px 0 6px; font-size: .9rem; }
 .empty-state p { max-width: 360px; margin: 0; color: var(--muted); font-size: .7rem; line-height: 1.55; }
@@ -212,6 +223,9 @@ button { color: inherit; }
   .metric-grid { grid-template-columns: 1fr; }
   .metric-card--primary { grid-column: auto; }
   .content-card { padding: 19px; }
+  .income-form__grid { grid-template-columns: 1fr; }
+  .income-item { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .income-item__amount { white-space: normal; }
 }
 
 @media (prefers-reduced-motion: reduce) {
