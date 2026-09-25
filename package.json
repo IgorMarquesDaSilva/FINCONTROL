@@ -1,0 +1,27 @@
+{
+  "name": "fincontrol",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Plataforma de educacao e organizacao financeira para jovens.",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "test": "node --test",
+    "test:integration": "node --test integration/auth.integration.js",
+    "db:check": "node scripts/check-database.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.15.0"
+  }
+}

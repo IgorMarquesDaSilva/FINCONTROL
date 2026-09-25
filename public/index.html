@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="FINCONTROL: organização financeira simples para quem está começando.">
+  <meta name="theme-color" content="#071b2b">
+  <title>FINCONTROL — Seu dinheiro, sem complicação</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Ir para o conteúdo</a>
+  <div class="toast" data-toast role="status" aria-live="polite" hidden></div>
+
+  <main id="main-content">
+    <section class="auth-view" data-auth-view aria-label="Acesso ao FINCONTROL">
+      <div class="auth-showcase">
+        <a class="brand brand--light" href="/" aria-label="FINCONTROL — início">
+          <span class="brand__mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M5 16.5V8.8M10 16.5V5.5M15 16.5v-4.7M20 16.5V3.5"/></svg>
+          </span>
+          <span>FINCONTROL</span>
+        </a>
+
+        <div class="showcase-copy">
+          <span class="eyebrow eyebrow--light"><span></span> Finanças no seu ritmo</span>
+          <h1>Seu dinheiro.<br><em>Suas escolhas.</em></h1>
+          <p>Organize sua vida financeira, entenda seus hábitos e construa seus planos — sem planilhas complicadas.</p>
+        </div>
+
+        <div class="showcase-card" aria-label="Prévia do resumo financeiro">
+          <div class="showcase-card__top">
+            <div>
+              <span>Saldo deste mês</span>
+              <strong>R$ 2.480,00</strong>
+            </div>
+            <span class="growth-pill">↗ 12%</span>
+          </div>
+          <div class="mini-chart" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <div class="showcase-card__footer">
+            <span><i class="dot dot--green"></i> Entradas <strong>R$ 3.750</strong></span>
+            <span><i class="dot dot--orange"></i> Saídas <strong>R$ 1.270</strong></span>
+          </div>
+        </div>
+
+        <p class="showcase-note">Feito para quem está começando a cuidar do próprio dinheiro.</p>
+      </div>
+
+      <div class="auth-panel">
+        <div class="auth-panel__inner">
+          <a class="brand brand--mobile" href="/" aria-label="FINCONTROL — início">
+            <span class="brand__mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M5 16.5V8.8M10 16.5V5.5M15 16.5v-4.7M20 16.5V3.5"/></svg>
+            </span>
+            <span>FINCONTROL</span>
+          </a>
+
+          <div class="auth-heading" data-login-heading>
+            <span class="eyebrow"><span></span> Que bom ter você aqui</span>
+            <h2>Entre na sua conta</h2>
+            <p>Continue de onde parou e acompanhe seus planos.</p>
+          </div>
+
+          <div class="auth-heading" data-register-heading hidden>
+            <span class="eyebrow"><span></span> Comece agora</span>
+            <h2>Crie sua conta grátis</h2>
+            <p>Leva menos de um minuto. Você só precisa de um e-mail.</p>
+          </div>
+
+          <form class="auth-form" data-login-form novalidate>
+            <div class="form-field">
+              <label for="login-email">E-mail</label>
+              <div class="input-wrap">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 6.5 12 13l9-6.5M4.5 5h15A1.5 1.5 0 0 1 21 6.5v11a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5v-11A1.5 1.5 0 0 1 4.5 5Z"/></svg>
+                <input id="login-email" name="email" type="email" autocomplete="email" placeholder="voce@exemplo.com" required>
+              </div>
+              <span class="field-error" data-error-for="email"></span>
+            </div>
+
+            <div class="form-field">
+              <div class="label-row">
+                <label for="login-password">Senha</label>
+              </div>
+              <div class="input-wrap">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Digite sua senha" required>
+                <button class="password-toggle" type="button" data-toggle-password="login-password" aria-label="Mostrar senha">
+                  <svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+                </button>
+              </div>
+              <span class="field-error" data-error-for="password"></span>
+            </div>
+
+            <button class="primary-button" type="submit">
+              <span data-button-label>Entrar na minha conta</span>
+              <span class="button-arrow" aria-hidden="true">→</span>
+              <span class="spinner" aria-hidden="true"></span>
+            </button>
+
+            <p class="auth-switch">Ainda não tem uma conta? <button type="button" data-show-register>Comece agora</button></p>
+          </form>
+
+          <form class="auth-form" data-register-form novalidate hidden>
+            <div class="form-field">
+              <label for="register-name">Seu nome</label>
+              <div class="input-wrap">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c.7-4 3.2-6 7.5-6s6.8 2 7.5 6"/></svg>
+                <input id="register-name" name="name" type="text" autocomplete="name" maxlength="120" placeholder="Como podemos chamar você?" required>
+              </div>
+              <span class="field-error" data-error-for="name"></span>
+            </div>
+
+            <div class="form-field">
+              <label for="register-email">E-mail</label>
+              <div class="input-wrap">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 6.5 12 13l9-6.5M4.5 5h15A1.5 1.5 0 0 1 21 6.5v11a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5v-11A1.5 1.5 0 0 1 4.5 5Z"/></svg>
+                <input id="register-email" name="email" type="email" autocomplete="email" maxlength="191" placeholder="voce@exemplo.com" required>
+              </div>
+              <span class="field-error" data-error-for="email"></span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-field">
+                <label for="register-password">Senha</label>
+                <div class="input-wrap">
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                  <input id="register-password" name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" required>
+                  <button class="password-toggle" type="button" data-toggle-password="register-password" aria-label="Mostrar senha">
+                    <svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+                  </button>
+                </div>
+                <span class="field-error" data-error-for="password"></span>
+              </div>
+
+              <div class="form-field">
+                <label for="register-confirmation">Confirmar senha</label>
+                <div class="input-wrap">
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                  <input id="register-confirmation" name="passwordConfirmation" type="password" autocomplete="new-password" placeholder="Repita a senha" required>
+                </div>
+                <span class="field-error" data-error-for="passwordConfirmation"></span>
+              </div>
+            </div>
+
+            <label class="checkbox-field">
+              <input type="checkbox" name="terms" required>
+              <span aria-hidden="true">✓</span>
+              <small>Li e concordo com os termos de uso e a política de privacidade.</small>
+            </label>
+            <span class="field-error" data-error-for="terms"></span>
+
+            <button class="primary-button" type="submit">
+              <span data-button-label>Criar minha conta</span>
+              <span class="button-arrow" aria-hidden="true">→</span>
+              <span class="spinner" aria-hidden="true"></span>
+            </button>
+
+            <p class="auth-switch">Já tem uma conta? <button type="button" data-show-login>Entre por aqui</button></p>
+          </form>
+
+          <p class="security-note">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.6 2.7 8.2 7 10 4.3-1.8 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+            Seus dados são protegidos e sua senha nunca é armazenada em texto aberto.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard-view" data-dashboard-view hidden>
+      <aside class="sidebar" data-sidebar>
+        <div class="sidebar__header">
+          <a class="brand brand--light" href="/">
+            <span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 16.5V8.8M10 16.5V5.5M15 16.5v-4.7M20 16.5V3.5"/></svg></span>
+            <span>FINCONTROL</span>
+          </a>
+          <button class="icon-button sidebar-close" type="button" data-menu-close aria-label="Fechar menu">×</button>
+        </div>
+        <nav class="sidebar-nav" aria-label="Menu principal">
+          <a class="sidebar-link is-active" href="#visao-geral"><span>⌂</span> Visão geral</a>
+          <a class="sidebar-link" href="#movimentacoes"><span>↕</span> Movimentações</a>
+          <a class="sidebar-link" href="#planejamento"><span>◎</span> Planejamento</a>
+          <a class="sidebar-link" href="#aprenda"><span>◇</span> Aprenda</a>
+        </nav>
+        <div class="sidebar-tip">
+          <span>Dica rápida</span>
+          <p>Separar 10% do que você recebe já é um ótimo começo.</p>
+        </div>
+        <button class="logout-button" type="button" data-logout><span>↪</span> Sair da conta</button>
+      </aside>
+      <button class="sidebar-overlay" type="button" data-menu-close aria-label="Fechar menu"></button>
+
+      <div class="dashboard-shell">
+        <header class="dashboard-header">
+          <button class="icon-button menu-button" type="button" data-menu-open aria-label="Abrir menu">☰</button>
+          <div>
+            <span class="dashboard-header__eyebrow">Minha conta</span>
+            <strong>Visão geral</strong>
+          </div>
+          <div class="user-chip">
+            <span data-user-initial>A</span>
+            <div><strong data-user-name>Usuário</strong><small>Conta pessoal</small></div>
+          </div>
+        </header>
+
+        <div class="dashboard-content" id="visao-geral">
+          <section class="welcome-row">
+            <div>
+              <span class="eyebrow"><span></span> Tudo sob controle</span>
+              <h1>Olá, <span data-first-name>jovem</span>!</h1>
+              <p>Este é o começo da sua jornada financeira.</p>
+            </div>
+            <button class="primary-button primary-button--compact" type="button" data-demo-action>+ Nova movimentação</button>
+          </section>
+
+          <section class="metric-grid" aria-label="Resumo financeiro de demonstração">
+            <article class="metric-card metric-card--primary">
+              <span>Saldo disponível</span><strong>R$ 0,00</strong><small>Comece adicionando uma movimentação</small>
+            </article>
+            <article class="metric-card"><span>Entradas no mês</span><strong>R$ 0,00</strong><small class="positive">Pronto para crescer</small></article>
+            <article class="metric-card"><span>Saídas no mês</span><strong>R$ 0,00</strong><small>Nenhuma despesa ainda</small></article>
+          </section>
+
+          <section class="dashboard-grid">
+            <article class="content-card" id="movimentacoes">
+              <div class="content-card__heading"><div><span>Movimentações</span><h2>Seus últimos registros</h2></div><button type="button" data-demo-action>Ver todos</button></div>
+              <div class="empty-state"><span aria-hidden="true">↕</span><h3>Seu histórico começa aqui</h3><p>Registre uma entrada ou saída para acompanhar para onde seu dinheiro está indo.</p><button type="button" data-demo-action>Adicionar primeira movimentação</button></div>
+            </article>
+            <article class="content-card journey-card" id="planejamento">
+              <span class="journey-card__tag">Primeiros passos</span>
+              <h2>Monte sua base financeira</h2>
+              <ul>
+                <li class="is-done"><span>✓</span><div><strong>Crie sua conta</strong><small>Primeiro passo concluído</small></div></li>
+                <li><span>2</span><div><strong>Registre sua renda</strong><small>Entenda quanto entra</small></div></li>
+                <li><span>3</span><div><strong>Defina uma meta</strong><small>Tenha um motivo para guardar</small></div></li>
+              </ul>
+            </article>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/app.js" defer></script>
+</body>
+</html>

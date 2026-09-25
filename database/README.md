@@ -8,7 +8,7 @@ Para a primeira instalação local, use o arquivo:
 database/fincontrol_xampp.sql
 ```
 
-Com Apache e MySQL iniciados no XAMPP, abra `http://localhost/phpmyadmin/`, entre em **Importar** e selecione esse arquivo. Ele cria o banco `fincontrol` e todas as tabelas da base inicial.
+Com Apache e MySQL iniciados no XAMPP, abra `http://localhost/phpmyadmin/`, entre em **Importar** e selecione esse arquivo. Ele cria o banco `fincontrol` e todas as tabelas da base inicial usada pelo servidor Node.js.
 
 A configuração padrão correspondente está em `.env.example`:
 
@@ -20,11 +20,11 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-Se a instalação local possuir senha para o usuário `root`, altere apenas o seu `.env`.
+Se a instalação local possuir senha para o usuário `root`, altere apenas o seu `.env`. Valide a conexão com `npm run db:check`.
 
 ## Modelo inicial
 
-- `users`: identidade e credenciais; o e-mail é único e a senha deve ser armazenada como hash.
+- `users`: identidade e credenciais; o e-mail é único e a senha é armazenada como hash `bcrypt` pelo backend Node.js.
 - `categories`: categorias pertencentes a um único usuário.
 - `transactions`: receitas e despesas unificadas por `type` (`INCOME` ou `EXPENSE`).
 - `budgets`: orçamento mensal por categoria.
@@ -34,6 +34,6 @@ As FKs compostas entre `(category_id, user_id)` e `categories (id, user_id)` imp
 
 ## Migrations
 
-`database/migrations/001_initial_schema.sql` continua sendo a migration versionada da estrutura inicial. O arquivo `fincontrol_xampp.sql` é apenas um instalador conveniente para uma base nova no XAMPP/phpMyAdmin.
+`database/migrations/001_initial_schema.sql` é a migration versionada da estrutura inicial. O arquivo `fincontrol_xampp.sql` é o instalador conveniente para uma base nova no XAMPP/phpMyAdmin.
 
 Mudanças futuras no schema devem ser adicionadas como novas migrations numeradas.

@@ -3,16 +3,18 @@
 .env.*
 !.env.example
 
-# PHP / Composer
-/vendor/
-composer.phar
-.phpunit.result.cache
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
 
 # Logs and runtime
 *.log
-/tmp/
-/storage/cache/
-/storage/logs/
+coverage/
+.nyc_output/
+tmp/
 
 # IDE / OS
 .idea/

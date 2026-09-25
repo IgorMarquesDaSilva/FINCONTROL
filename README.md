@@ -1,120 +1,137 @@
 # FINCONTROL
 
-Aplicação de controle financeiro pessoal construída com PHP, HTML, CSS, JavaScript e MySQL.
+Plataforma web de organização financeira para jovens, construída com **HTML, CSS, JavaScript, Node.js, Express e MySQL**.
 
-## Acesso rápido com XAMPP
+Esta primeira entrega inclui:
 
-A estrutura foi preparada para que o site abra diretamente pela raiz do projeto.
+- interface responsiva para celular, tablet e desktop;
+- tela de cadastro com validação de campos;
+- tela de login;
+- criação segura de usuários no MySQL;
+- senha protegida com hash `bcrypt`;
+- sessão autenticada em cookie `httpOnly`;
+- restauração de sessão, área inicial autenticada e logout;
+- limite de tentativas nas rotas de autenticação.
 
-### 1. Coloque o projeto no htdocs
+## Requisitos
 
-O caminho recomendado no Windows é:
+- Node.js 20 ou superior;
+- npm;
+- XAMPP com MySQL/MariaDB e Apache (o Apache é necessário apenas para abrir o phpMyAdmin).
 
-```text
-C:\xampp\htdocs\FINCONTROL
+## Instalação
+
+### 1. Instale as dependências
+
+Na raiz do projeto:
+
+```powershell
+npm install
 ```
 
-### 2. Inicie o XAMPP
+### 2. Configure o ambiente
 
-Abra o XAMPP Control Panel e inicie:
-
-- Apache
-- MySQL
-
-### 3. Configure o ambiente
-
-Na raiz do projeto, copie `.env.example` para `.env`.
-
-No PowerShell:
+Crie seu arquivo local a partir do exemplo:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-O exemplo já usa a configuração padrão do XAMPP:
+O padrão já está preparado para o MySQL do XAMPP, com usuário `root` sem senha. Caso sua instalação use outra senha ou porta, altere apenas o arquivo `.env`.
 
-```text
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=fincontrol
-DB_USERNAME=root
-DB_PASSWORD=
+Antes de publicar, defina uma chave longa e aleatória em `JWT_SECRET`.
+
+### 3. Crie o banco pelo phpMyAdmin
+
+1. Inicie **Apache** e **MySQL** no painel do XAMPP.
+2. Abra `http://localhost/phpmyadmin/`.
+3. Entre na aba **Importar**.
+4. Selecione `database/fincontrol_xampp.sql`.
+5. Confirme a importação.
+
+O arquivo cria o banco `fincontrol` e as tabelas iniciais.
+
+### 4. Valide a conexão
+
+```powershell
+npm run db:check
 ```
 
-Se o seu MySQL possuir senha, altere somente o arquivo `.env`.
+### 5. Inicie o projeto
 
-### 4. Crie o banco no phpMyAdmin
+Durante o desenvolvimento:
 
-Abra:
-
-```text
-http://localhost/phpmyadmin/
+```powershell
+npm run dev
 ```
 
-Entre em **Importar**, selecione:
+Depois, abra `http://localhost:3000`.
 
-```text
-database/fincontrol_xampp.sql
+Para executar sem o modo de observação:
+
+```powershell
+npm start
 ```
 
-O arquivo cria automaticamente o banco `fincontrol` e as tabelas iniciais.
+## Testes
 
-### 5. Abra o FINCONTROL
-
-Acesse diretamente:
-
-```text
-http://localhost/FINCONTROL/
+```powershell
+npm test
 ```
 
-Não é necessário acessar `/frontend` nem executar `php -S`.
+Os testes rápidos cobrem a normalização e a validação dos dados de cadastro e login. Com o MySQL do XAMPP em execução, rode também o fluxo completo de cadastro, sessão, logout e login:
+
+```powershell
+npm run test:integration
+```
+
+O teste integrado cria um usuário temporário e o remove ao terminar.
 
 ## Estrutura
 
 ```text
 FINCONTROL/
-├── index.php          # entrada principal do site
-├── assets/            # CSS e JavaScript do frontend
-├── backend/           # API e regras de negócio PHP
-├── database/          # banco, migrations e instalador do XAMPP
-├── docs/              # documentação técnica
-├── .env.example       # configuração local de exemplo
-├── .htaccess          # configuração básica do Apache
-└── composer.json
+├── public/
+│   ├── css/styles.css       # identidade visual e responsividade
+│   ├── js/app.js            # interação, formulários e sessão no navegador
+│   └── index.html           # login, cadastro e área autenticada
+├── src/
+│   ├── config/              # ambiente e conexão MySQL
+│   ├── errors/              # erros esperados da aplicação
+│   ├── middleware/          # autenticação e tratamento de erros
+│   ├── routes/              # endpoints HTTP
+│   ├── services/            # regras de autenticação e usuários
+│   ├── validation/          # validações reutilizáveis
+│   ├── app.js               # configuração do Express
+│   └── server.js            # inicialização do servidor
+├── database/                # schema e instruções do phpMyAdmin
+├── scripts/                 # utilitários de desenvolvimento
+├── test/                    # testes automatizados
+├── .env.example
+└── package.json
 ```
 
-## Validação pelo PHP do XAMPP
+## API disponível
 
-Sem adicionar PHP ao PATH do Windows, use:
+| Método | Rota | Finalidade |
+| --- | --- | --- |
+| `GET` | `/api/health` | Verificar se a API está ativa |
+| `POST` | `/api/auth/register` | Criar usuário e iniciar sessão |
+| `POST` | `/api/auth/login` | Autenticar usuário |
+| `GET` | `/api/auth/me` | Obter o usuário da sessão |
+| `POST` | `/api/auth/logout` | Encerrar a sessão |
 
-```powershell
-C:\xampp\php\php.exe backend\tests\run.php
-C:\xampp\php\php.exe backend\tests\xampp.php
-C:\xampp\php\php.exe backend\scripts\check-database.php
-```
+## Segurança aplicada
 
-## Banco de dados
+- queries parametrizadas contra SQL injection;
+- senhas com `bcrypt` e custo 12;
+- cookie de sessão inacessível ao JavaScript;
+- `SameSite=Lax` e `Secure` automático em produção;
+- headers de segurança com Helmet;
+- mensagens de login que não revelam se um e-mail existe;
+- limitação de requisições nas rotas de login e cadastro;
+- `.env` ignorado pelo Git.
 
-A base inicial contém:
+## Próximas funcionalidades
 
-- `users`;
-- `categories`;
-- `transactions` para receitas e despesas;
-- `budgets`;
-- `financial_goals`.
-
-Valores financeiros usam `DECIMAL(15,2)` e as relações com `user_id` ajudam a impedir associação de dados entre usuários diferentes.
-
-## Tecnologias
-
-- PHP 8.2+
-- MySQL 8.0+ / MariaDB compatível
-- PDO MySQL
-- HTML5
-- CSS3
-- JavaScript
-- Apache (XAMPP no ambiente local)
-
-## Desenvolvimento
-
-Consulte `docs/CONTRIBUTING.md` antes de desenvolver novas funcionalidades. O projeto utiliza branches, Pull Requests e Conventional Commits.
+A área autenticada já está preparada visualmente para receber movimentações, categorias, metas, conteúdos educativos e demais backlogs. Os botões dessas funcionalidades indicam que elas entram na próxima etapa e ainda não gravam dados.

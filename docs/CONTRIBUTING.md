@@ -41,7 +41,19 @@ Nunca versionar `.env`, senhas, tokens, chaves de API ou dumps reais de banco. S
 
 ## Estrutura do repositório
 
-- `frontend/`: HTML, CSS, JavaScript e recursos da interface.
-- `backend/`: aplicação PHP e testes.
+- `public/`: HTML, CSS e JavaScript servidos ao navegador.
+- `src/`: servidor Node.js, API e regras de negócio.
+- `test/`: testes automatizados executados pelo test runner do Node.js.
 - `database/`: migrations e documentação do MySQL.
 - `docs/`: decisões, guias e documentação técnica.
+
+## Validação local
+
+Antes de abrir um Pull Request, execute:
+
+```powershell
+npm test
+npm run db:check
+```
+
+O segundo comando requer o MySQL do XAMPP iniciado e um `.env` configurado.
