@@ -12,6 +12,9 @@ const balanceTotal = document.querySelector('[data-balance-total]');
 const balanceHelper = document.querySelector('[data-balance-helper]');
 const monthIncomeTotal = document.querySelector('[data-month-income-total]');
 const incomeHelper = document.querySelector('[data-income-helper]');
+const editDialog = document.querySelector('[data-edit-dialog]');
+const editForm = document.querySelector('[data-edit-transaction-form]');
+const editDialogTitle = document.querySelector('[data-edit-dialog-title]');
 
 let toastTimer;
 let incomes = [];
@@ -121,11 +124,22 @@ function renderIncomes() {
     meta.append(category, ` - ${formatDate(income.transactionDate)}`);
     details.append(description, meta);
 
+    const actions = document.createElement('div');
+    actions.className = 'income-item__actions';
+
     const amount = document.createElement('span');
     amount.className = 'income-item__amount';
     amount.textContent = formatCurrency(income.amount);
 
-    item.append(details, amount);
+    const editButton = document.createElement('button');
+    editButton.className = 'income-item__edit';
+    editButton.type = 'button';
+    editButton.dataset.editTransaction = income.id;
+    editButton.setAttribute('aria-label', `Editar receita ${income.description}`);
+    editButton.textContent = 'Editar';
+
+    actions.append(amount, editButton);
+    item.append(details, actions);
     incomeList.append(item);
   });
 
@@ -163,6 +177,53 @@ function setLoading(form, loading) {
   button.disabled = loading;
   button.classList.toggle('is-loading', loading);
   form.setAttribute('aria-busy', String(loading));
+}
+
+function transactionFormData(form) {
+  const formData = new FormData(form);
+
+  return {
+    description: String(formData.get('description') || '').trim(),
+    amount: String(formData.get('amount') || '').trim(),
+    transactionDate: String(formData.get('transactionDate') || '').trim(),
+    categoryName: String(formData.get('categoryName') || '').trim(),
+  };
+}
+
+function validateTransactionForm(data, transactionLabel) {
+  const errors = {};
+
+  if (data.description.length < 2) errors.description = 'Informe uma descricao.';
+  if (!data.amount || Number(data.amount) <= 0) errors.amount = 'Informe um valor maior que zero.';
+  if (!data.transactionDate) errors.transactionDate = `Informe a data da ${transactionLabel}.`;
+  if (data.categoryName.length < 2) errors.categoryName = 'Informe uma categoria.';
+
+  return errors;
+}
+
+async function openTransactionEditor(transactionId) {
+  try {
+    const payload = await api(`/api/transactions/${transactionId}`);
+    const { transaction } = payload;
+    const transactionLabel = transaction.type === 'EXPENSE' ? 'despesa' : 'receita';
+
+    clearErrors(editForm);
+    editForm.dataset.transactionType = transaction.type;
+    editForm.elements.namedItem('transactionId').value = transaction.id;
+    editForm.elements.namedItem('description').value = transaction.description;
+    editForm.elements.namedItem('amount').value = Number(transaction.amount).toFixed(2);
+    editForm.elements.namedItem('transactionDate').value = transaction.transactionDate;
+    editForm.elements.namedItem('categoryName').value = transaction.category?.name || '';
+    editDialogTitle.textContent = `Editar ${transactionLabel}`;
+    editDialog.showModal();
+    editForm.elements.namedItem('description').focus();
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+function closeTransactionEditor() {
+  if (editDialog.open) editDialog.close();
 }
 
 function showAuth(mode = 'login') {
@@ -272,19 +333,8 @@ registerForm.addEventListener('submit', async (event) => {
 incomeForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   clearErrors(incomeForm);
-  const formData = new FormData(incomeForm);
-  const data = {
-    description: String(formData.get('description') || '').trim(),
-    amount: String(formData.get('amount') || '').trim(),
-    transactionDate: String(formData.get('transactionDate') || '').trim(),
-    categoryName: String(formData.get('categoryName') || '').trim(),
-  };
-  const clientErrors = {};
-
-  if (data.description.length < 2) clientErrors.description = 'Informe uma descricao.';
-  if (!data.amount || Number(data.amount) <= 0) clientErrors.amount = 'Informe um valor maior que zero.';
-  if (!data.transactionDate) clientErrors.transactionDate = 'Informe a data da receita.';
-  if (data.categoryName.length < 2) clientErrors.categoryName = 'Informe uma categoria.';
+  const data = transactionFormData(incomeForm);
+  const clientErrors = validateTransactionForm(data, 'receita');
 
   if (Object.keys(clientErrors).length) {
     displayErrors(incomeForm, clientErrors);
@@ -308,6 +358,62 @@ incomeForm.addEventListener('submit', async (event) => {
   } finally {
     setLoading(incomeForm, false);
   }
+});
+
+incomeList.addEventListener('click', (event) => {
+  const editButton = event.target.closest('[data-edit-transaction]');
+  if (editButton) void openTransactionEditor(editButton.dataset.editTransaction);
+});
+
+editForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  clearErrors(editForm);
+  const transactionId = editForm.elements.namedItem('transactionId').value;
+  const transactionLabel = editForm.dataset.transactionType === 'EXPENSE' ? 'despesa' : 'receita';
+  const data = transactionFormData(editForm);
+  const clientErrors = validateTransactionForm(data, transactionLabel);
+
+  if (Object.keys(clientErrors).length) {
+    displayErrors(editForm, clientErrors);
+    return;
+  }
+
+  try {
+    setLoading(editForm, true);
+    const payload = await api(`/api/transactions/${transactionId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+
+    if (payload.transaction.type === 'INCOME') {
+      incomes = incomes.map((income) => (
+        Number(income.id) === Number(payload.transaction.id) ? payload.transaction : income
+      ));
+      renderIncomes();
+    }
+
+    closeTransactionEditor();
+    showToast(payload.message);
+  } catch (error) {
+    displayErrors(editForm, error.fields);
+    showToast(error.message, 'error');
+  } finally {
+    setLoading(editForm, false);
+  }
+});
+
+document.querySelectorAll('[data-close-edit-dialog]').forEach((button) => {
+  button.addEventListener('click', closeTransactionEditor);
+});
+
+editDialog.addEventListener('click', (event) => {
+  if (event.target === editDialog) closeTransactionEditor();
+});
+
+editDialog.addEventListener('close', () => {
+  editForm.reset();
+  delete editForm.dataset.transactionType;
+  clearErrors(editForm);
 });
 
 document.querySelector('[data-logout]').addEventListener('click', async () => {

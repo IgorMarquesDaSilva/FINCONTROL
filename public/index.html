@@ -293,6 +293,68 @@
         </div>
       </div>
     </section>
+
+    <dialog class="edit-dialog" data-edit-dialog aria-labelledby="edit-transaction-title">
+      <div class="edit-dialog__header">
+        <div>
+          <span class="eyebrow"><span></span> Ajustar movimentação</span>
+          <h2 id="edit-transaction-title" data-edit-dialog-title>Editar receita</h2>
+          <p>Os dados atuais foram carregados para você revisar.</p>
+        </div>
+        <button class="edit-dialog__close" type="button" data-close-edit-dialog aria-label="Fechar edição">×</button>
+      </div>
+
+      <form class="edit-form" data-edit-transaction-form novalidate>
+        <input name="transactionId" type="hidden">
+
+        <div class="form-field">
+          <label for="edit-description">Descrição</label>
+          <div class="input-wrap">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+            <input id="edit-description" name="description" type="text" maxlength="180" required>
+          </div>
+          <span class="field-error" data-error-for="description"></span>
+        </div>
+
+        <div class="edit-form__row">
+          <div class="form-field">
+            <label for="edit-amount">Valor</label>
+            <div class="input-wrap">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v18M17 7.5c-.8-1-2-1.5-3.8-1.5-2.1 0-3.7 1-3.7 2.7 0 4.1 8 1.6 8 5.9 0 1.8-1.7 3-4.1 3-1.9 0-3.4-.6-4.4-1.8"/></svg>
+              <input id="edit-amount" name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required>
+            </div>
+            <span class="field-error" data-error-for="amount"></span>
+          </div>
+
+          <div class="form-field">
+            <label for="edit-date">Data</label>
+            <div class="input-wrap">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>
+              <input id="edit-date" name="transactionDate" type="date" required>
+            </div>
+            <span class="field-error" data-error-for="transactionDate"></span>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="edit-category">Categoria</label>
+          <div class="input-wrap">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H10l2 2h5.5A2.5 2.5 0 0 1 20 9.5v7A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z"/></svg>
+            <input id="edit-category" name="categoryName" type="text" maxlength="80" required>
+          </div>
+          <span class="field-error" data-error-for="categoryName"></span>
+        </div>
+
+        <div class="edit-dialog__actions">
+          <button class="secondary-button" type="button" data-close-edit-dialog>Cancelar</button>
+          <button class="primary-button primary-button--compact" type="submit">
+            <span data-button-label>Salvar alterações</span>
+            <span class="button-arrow" aria-hidden="true">→</span>
+            <span class="spinner" aria-hidden="true"></span>
+          </button>
+        </div>
+      </form>
+    </dialog>
   </main>
 
   <script src="/js/app.js" defer></script>

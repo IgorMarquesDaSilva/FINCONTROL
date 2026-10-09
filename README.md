@@ -11,6 +11,8 @@ Esta primeira entrega inclui:
 - senha protegida com hash `bcrypt`;
 - sessão autenticada em cookie `httpOnly`;
 - restauração de sessão, área inicial autenticada e logout;
+- cadastro e histórico recente de receitas;
+- edição validada de receitas e despesas, sempre limitada ao usuário autenticado;
 - limite de tentativas nas rotas de autenticação.
 
 ## Requisitos
@@ -79,7 +81,7 @@ npm start
 npm test
 ```
 
-Os testes rápidos cobrem a normalização e a validação dos dados de cadastro e login. Com o MySQL do XAMPP em execução, rode também o fluxo completo de cadastro, sessão, logout e login:
+Os testes rápidos cobrem a normalização e a validação dos dados de autenticação e movimentações. Com o MySQL do XAMPP em execução, rode também os fluxos completos de autenticação, receitas e edição de receitas e despesas:
 
 ```powershell
 npm run test:integration
@@ -102,13 +104,13 @@ FINCONTROL/
 │   ├── routes/              # endpoints HTTP
 │   ├── services/            # regras de autenticação e usuários
 │   ├── validation/          # validações reutilizáveis
-│   ├── app.js               # configuração do Express
-│   └── server.js            # inicialização do servidor
+│   └── app.js               # configuração do Express
 ├── database/                # schema e instruções do phpMyAdmin
 ├── scripts/                 # utilitários de desenvolvimento
 ├── test/                    # testes automatizados
 ├── .env.example
-└── package.json
+├── package.json
+└── server.js                # inicialização do servidor
 ```
 
 ## API disponível
@@ -120,6 +122,10 @@ FINCONTROL/
 | `POST` | `/api/auth/login` | Autenticar usuário |
 | `GET` | `/api/auth/me` | Obter o usuário da sessão |
 | `POST` | `/api/auth/logout` | Encerrar a sessão |
+| `GET` | `/api/incomes` | Listar receitas recentes do usuário |
+| `POST` | `/api/incomes` | Cadastrar uma receita |
+| `GET` | `/api/transactions/:id` | Carregar uma movimentação do usuário para edição |
+| `PUT` | `/api/transactions/:id` | Atualizar valor, categoria, descrição e data |
 
 ## Segurança aplicada
 
@@ -134,4 +140,4 @@ FINCONTROL/
 
 ## Próximas funcionalidades
 
-A área autenticada já está preparada visualmente para receber movimentações, categorias, metas, conteúdos educativos e demais backlogs. Os botões dessas funcionalidades indicam que elas entram na próxima etapa e ainda não gravam dados.
+A área autenticada já está preparada visualmente para receber despesas, categorias, metas, conteúdos educativos e demais backlogs ainda não implementadas.

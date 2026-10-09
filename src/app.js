@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/auth.routes');
 const incomeRoutes = require('./routes/income.routes');
+const transactionRoutes = require('./routes/transaction.routes');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -30,6 +31,7 @@ app.get('/api/health', (_request, response) => {
 });
 app.use('/api/auth', authRoutes);
 app.use('/api/incomes', incomeRoutes);
+app.use('/api/transactions', transactionRoutes);
 app.use(express.static(publicDirectory, { extensions: ['html'] }));
 
 app.use('/api', notFound);

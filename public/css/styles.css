@@ -167,6 +167,20 @@ button { color: inherit; }
 .income-item small { margin-top: 4px; color: var(--muted); font-size: .66rem; }
 .income-item__amount { color: var(--green-dark); font-size: .86rem; font-weight: 850; white-space: nowrap; }
 .income-item__category { color: #7a8b92; }
+.income-item__actions { display: flex; align-items: center; gap: 13px; }
+.income-item__edit { padding: 7px 10px; color: var(--green-dark); border: 1px solid #bdebd8; border-radius: 8px; background: var(--green-soft); font-size: .65rem; font-weight: 800; cursor: pointer; }
+.income-item__edit:hover { border-color: #8eddbd; background: #d9f6e9; }
+.edit-dialog { width: min(560px, calc(100% - 32px)); padding: 0; color: var(--ink); border: 0; border-radius: 18px; background: var(--surface); box-shadow: 0 30px 90px rgba(7,27,43,.25); }
+.edit-dialog::backdrop { background: rgba(7,27,43,.62); backdrop-filter: blur(3px); }
+.edit-dialog__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 26px 28px 21px; border-bottom: 1px solid var(--line); }
+.edit-dialog__header h2 { margin: 11px 0 5px; font-family: Georgia, "Times New Roman", serif; font-size: 1.6rem; font-weight: 500; }
+.edit-dialog__header p { margin: 0; color: var(--muted); font-size: .73rem; }
+.edit-dialog__close { flex: 0 0 auto; width: 36px; height: 36px; color: var(--muted); border: 1px solid var(--line); border-radius: 9px; background: #fff; font-size: 1.25rem; cursor: pointer; }
+.edit-form { display: grid; gap: 17px; padding: 24px 28px 28px; }
+.edit-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.edit-dialog__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 5px; }
+.secondary-button { min-height: 43px; padding: 0 17px; color: var(--muted); border: 1px solid var(--line); border-radius: 10px; background: #fff; font-size: .75rem; font-weight: 750; cursor: pointer; }
+.secondary-button:hover { background: #f4f7f6; }
 .empty-state { display: grid; min-height: 225px; place-items: center; align-content: center; text-align: center; }
 .empty-state--compact { min-height: 190px; border-bottom: 1px solid var(--line); }
 .empty-state > span { display: grid; width: 48px; height: 48px; place-items: center; color: var(--green-dark); border-radius: 50%; background: var(--green-soft); font-size: 1.2rem; }
@@ -225,7 +239,13 @@ button { color: inherit; }
   .content-card { padding: 19px; }
   .income-form__grid { grid-template-columns: 1fr; }
   .income-item { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .income-item__actions { width: 100%; justify-content: space-between; }
   .income-item__amount { white-space: normal; }
+  .edit-dialog__header { padding: 22px 20px 18px; }
+  .edit-form { padding: 21px 20px 23px; }
+  .edit-form__row { grid-template-columns: 1fr; }
+  .edit-dialog__actions { align-items: stretch; flex-direction: column-reverse; }
+  .edit-dialog__actions .primary-button, .secondary-button { width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
