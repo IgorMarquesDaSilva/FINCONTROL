@@ -58,4 +58,16 @@ router.put('/:id', async (request, response, next) => {
   }
 });
 
+router.delete('/:id', async (request, response, next) => {
+  try {
+    const transactionId = parseTransactionId(request.params.id);
+    const transaction = await transactionService.remove(request.user.id, transactionId);
+    const transactionLabel = transaction.type === 'EXPENSE' ? 'Despesa' : 'Receita';
+
+    response.json({ message: `${transactionLabel} excluida com sucesso.`, transaction });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

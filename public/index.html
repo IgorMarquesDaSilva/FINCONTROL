@@ -418,6 +418,34 @@
         </div>
       </form>
     </dialog>
+
+    <dialog class="delete-dialog" data-delete-dialog aria-labelledby="delete-transaction-title">
+      <form data-delete-transaction-form>
+        <input name="transactionId" type="hidden">
+        <input name="transactionType" type="hidden">
+
+        <div class="delete-dialog__icon" aria-hidden="true">!</div>
+        <span class="delete-dialog__eyebrow">Confirmar exclusão</span>
+        <h2 id="delete-transaction-title">Excluir <span data-delete-type>movimentação</span>?</h2>
+        <p>Esta ação removerá permanentemente o registro abaixo e atualizará seu resumo financeiro.</p>
+
+        <div class="delete-dialog__transaction">
+          <div>
+            <strong data-delete-description>Movimentação</strong>
+            <small><span data-delete-category>Categoria</span> · <span data-delete-date>Data</span></small>
+          </div>
+          <span data-delete-amount>R$ 0,00</span>
+        </div>
+
+        <div class="delete-dialog__actions">
+          <button class="secondary-button" type="button" data-close-delete-dialog>Cancelar</button>
+          <button class="danger-button" type="submit">
+            <span data-button-label>Sim, excluir</span>
+            <span class="spinner" aria-hidden="true"></span>
+          </button>
+        </div>
+      </form>
+    </dialog>
   </main>
 
   <script src="/js/app.js" defer></script>

@@ -174,6 +174,8 @@ button { color: inherit; }
 .income-item__actions { display: flex; align-items: center; gap: 13px; }
 .income-item__edit { padding: 7px 10px; color: var(--green-dark); border: 1px solid #bdebd8; border-radius: 8px; background: var(--green-soft); font-size: .65rem; font-weight: 800; cursor: pointer; }
 .income-item__edit:hover { border-color: #8eddbd; background: #d9f6e9; }
+.income-item__delete { display: grid; width: 31px; height: 31px; place-items: center; color: #a94b4b; border: 1px solid #f0caca; border-radius: 8px; background: #fff4f4; font-size: .86rem; cursor: pointer; }
+.income-item__delete:hover { color: #873333; border-color: #e3aaaa; background: #ffe9e9; }
 .expense-card .content-card__heading > div > span { color: #c46a39; }
 .expense-card .content-card__heading button { color: #b85a2d; }
 .expense-submit { background: var(--orange); box-shadow: 0 10px 22px rgba(255,159,104,.18); }
@@ -192,6 +194,24 @@ button { color: inherit; }
 .edit-dialog__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 5px; }
 .secondary-button { min-height: 43px; padding: 0 17px; color: var(--muted); border: 1px solid var(--line); border-radius: 10px; background: #fff; font-size: .75rem; font-weight: 750; cursor: pointer; }
 .secondary-button:hover { background: #f4f7f6; }
+.delete-dialog { width: min(470px, calc(100% - 32px)); padding: 0; color: var(--ink); border: 0; border-radius: 18px; background: var(--surface); box-shadow: 0 30px 90px rgba(7,27,43,.28); text-align: center; }
+.delete-dialog::backdrop { background: rgba(7,27,43,.66); backdrop-filter: blur(3px); }
+.delete-dialog form { padding: 30px; }
+.delete-dialog__icon { display: grid; width: 48px; height: 48px; margin: 0 auto 15px; place-items: center; color: #a63f3f; border-radius: 50%; background: #ffe8e8; font-size: 1.15rem; font-weight: 900; }
+.delete-dialog__eyebrow { color: #aa4646; font-size: .62rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+.delete-dialog h2 { margin: 8px 0 9px; font-family: Georgia, "Times New Roman", serif; font-size: 1.65rem; font-weight: 500; }
+.delete-dialog form > p { margin: 0 auto; max-width: 365px; color: var(--muted); font-size: .73rem; line-height: 1.55; }
+.delete-dialog__transaction { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 22px 0; padding: 15px 16px; border: 1px solid var(--line); border-radius: 11px; background: var(--canvas); text-align: left; }
+.delete-dialog__transaction strong, .delete-dialog__transaction small { display: block; }
+.delete-dialog__transaction strong { font-size: .78rem; }
+.delete-dialog__transaction small { margin-top: 4px; color: var(--muted); font-size: .63rem; }
+.delete-dialog__transaction > span { color: #a84444; font-size: .82rem; font-weight: 850; white-space: nowrap; }
+.delete-dialog__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.danger-button { display: flex; min-height: 43px; align-items: center; justify-content: center; gap: 9px; padding: 0 17px; color: #fff; border: 0; border-radius: 10px; background: #b74747; font-size: .75rem; font-weight: 800; cursor: pointer; }
+.danger-button:hover { background: #a13c3c; }
+.danger-button:disabled { cursor: wait; opacity: .72; }
+.danger-button.is-loading .spinner { display: block; border-color: rgba(255,255,255,.35); border-top-color: #fff; }
+.danger-button.is-loading [data-button-label] { display: none; }
 .empty-state { display: grid; min-height: 225px; place-items: center; align-content: center; text-align: center; }
 .empty-state--compact { min-height: 190px; border-bottom: 1px solid var(--line); }
 .empty-state > span { display: grid; width: 48px; height: 48px; place-items: center; color: var(--green-dark); border-radius: 50%; background: var(--green-soft); font-size: 1.2rem; }
@@ -260,6 +280,9 @@ button { color: inherit; }
   .edit-form__row { grid-template-columns: 1fr; }
   .edit-dialog__actions { align-items: stretch; flex-direction: column-reverse; }
   .edit-dialog__actions .primary-button, .secondary-button { width: 100%; }
+  .delete-dialog form { padding: 25px 20px; }
+  .delete-dialog__transaction { align-items: flex-start; flex-direction: column; }
+  .delete-dialog__actions { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {

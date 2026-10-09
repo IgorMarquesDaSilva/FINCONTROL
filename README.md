@@ -14,6 +14,7 @@ Esta primeira entrega inclui:
 - cadastro e histórico recente de receitas;
 - cadastro e histórico recente de despesas, com atualização imediata do saldo;
 - edição validada de receitas e despesas, sempre limitada ao usuário autenticado;
+- exclusão confirmada de movimentações com recálculo imediato do resumo financeiro;
 - limite de tentativas nas rotas de autenticação.
 
 ## Requisitos
@@ -129,6 +130,7 @@ FINCONTROL/
 | `POST` | `/api/expenses` | Cadastrar uma despesa |
 | `GET` | `/api/transactions/:id` | Carregar uma movimentação do usuário para edição |
 | `PUT` | `/api/transactions/:id` | Atualizar valor, categoria, descrição e data |
+| `DELETE` | `/api/transactions/:id` | Excluir uma movimentação do usuário |
 
 ## Segurança aplicada
 

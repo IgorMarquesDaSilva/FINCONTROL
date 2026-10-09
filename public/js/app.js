@@ -20,6 +20,13 @@ const editDialog = document.querySelector('[data-edit-dialog]');
 const editForm = document.querySelector('[data-edit-transaction-form]');
 const editDialogTitle = document.querySelector('[data-edit-dialog-title]');
 const editDescriptionLabel = document.querySelector('[data-edit-description-label]');
+const deleteDialog = document.querySelector('[data-delete-dialog]');
+const deleteForm = document.querySelector('[data-delete-transaction-form]');
+const deleteType = document.querySelector('[data-delete-type]');
+const deleteDescription = document.querySelector('[data-delete-description]');
+const deleteCategory = document.querySelector('[data-delete-category]');
+const deleteDate = document.querySelector('[data-delete-date]');
+const deleteAmount = document.querySelector('[data-delete-amount]');
 
 let toastTimer;
 let incomes = [];
@@ -159,7 +166,14 @@ function renderTransactions(listElement, transactions, type) {
     editButton.setAttribute('aria-label', `Editar ${transactionLabel} ${transaction.description || 'sem descrição'}`);
     editButton.textContent = 'Editar';
 
-    actions.append(amount, editButton);
+    const deleteButton = document.createElement('button');
+    deleteButton.className = 'income-item__delete';
+    deleteButton.type = 'button';
+    deleteButton.dataset.deleteTransaction = transaction.id;
+    deleteButton.setAttribute('aria-label', `Excluir ${transactionLabel} ${transaction.description || 'sem descrição'}`);
+    deleteButton.textContent = '×';
+
+    actions.append(amount, editButton, deleteButton);
     item.append(details, actions);
     listElement.append(item);
   });
@@ -264,6 +278,29 @@ async function openTransactionEditor(transactionId) {
 
 function closeTransactionEditor() {
   if (editDialog.open) editDialog.close();
+}
+
+async function openTransactionDeletion(transactionId) {
+  try {
+    const payload = await api(`/api/transactions/${transactionId}`);
+    const { transaction } = payload;
+    const isExpense = transaction.type === 'EXPENSE';
+
+    deleteForm.elements.namedItem('transactionId').value = transaction.id;
+    deleteForm.elements.namedItem('transactionType').value = transaction.type;
+    deleteType.textContent = isExpense ? 'despesa' : 'receita';
+    deleteDescription.textContent = transaction.description || 'Sem descrição';
+    deleteCategory.textContent = transaction.category?.name || (isExpense ? 'Despesa' : 'Receita');
+    deleteDate.textContent = formatDate(transaction.transactionDate);
+    deleteAmount.textContent = `${isExpense ? '- ' : ''}${formatCurrency(transaction.amount)}`;
+    deleteDialog.showModal();
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+function closeTransactionDeletion() {
+  if (deleteDialog.open) deleteDialog.close();
 }
 
 function showAuth(mode = 'login') {
@@ -433,7 +470,10 @@ expenseForm.addEventListener('submit', async (event) => {
 [incomeList, expenseList].forEach((listElement) => {
   listElement.addEventListener('click', (event) => {
     const editButton = event.target.closest('[data-edit-transaction]');
+    const deleteButton = event.target.closest('[data-delete-transaction]');
+
     if (editButton) void openTransactionEditor(editButton.dataset.editTransaction);
+    if (deleteButton) void openTransactionDeletion(deleteButton.dataset.deleteTransaction);
   });
 });
 
@@ -497,6 +537,44 @@ editDialog.addEventListener('close', () => {
   editForm.elements.namedItem('description').required = false;
   editDescriptionLabel.textContent = 'Descrição';
   clearErrors(editForm);
+});
+
+deleteForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const transactionId = deleteForm.elements.namedItem('transactionId').value;
+  const transactionType = deleteForm.elements.namedItem('transactionType').value;
+
+  try {
+    setLoading(deleteForm, true);
+    const payload = await api(`/api/transactions/${transactionId}`, { method: 'DELETE' });
+
+    if (transactionType === 'EXPENSE') {
+      expenses = expenses.filter((expense) => Number(expense.id) !== Number(transactionId));
+      renderExpenses();
+    } else {
+      incomes = incomes.filter((income) => Number(income.id) !== Number(transactionId));
+      renderIncomes();
+    }
+
+    closeTransactionDeletion();
+    showToast(payload.message);
+  } catch (error) {
+    showToast(error.message, 'error');
+  } finally {
+    setLoading(deleteForm, false);
+  }
+});
+
+document.querySelectorAll('[data-close-delete-dialog]').forEach((button) => {
+  button.addEventListener('click', closeTransactionDeletion);
+});
+
+deleteDialog.addEventListener('click', (event) => {
+  if (event.target === deleteDialog) closeTransactionDeletion();
+});
+
+deleteDialog.addEventListener('close', () => {
+  deleteForm.reset();
 });
 
 document.querySelector('[data-logout]').addEventListener('click', async () => {

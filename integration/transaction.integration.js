@@ -27,7 +27,7 @@ async function register(baseUrl, suffix) {
   };
 }
 
-test('cadastra e edita receitas e despesas sem permitir acesso entre usuarios', async () => {
+test('cadastra, edita e exclui movimentacoes sem permitir acesso entre usuarios', async () => {
   const server = await new Promise((resolve) => {
     const listener = app.listen(0, '127.0.0.1', () => resolve(listener));
   });
@@ -132,6 +132,45 @@ test('cadastra e edita receitas e despesas sem permitir acesso entre usuarios', 
       Object.keys((await invalidUpdate.json()).error.fields).sort(),
       ['amount', 'categoryName', 'description', 'transactionDate'],
     );
+
+    const forbiddenDelete = await fetch(`${baseUrl}/api/transactions/${income.id}`, {
+      method: 'DELETE',
+      headers: { Cookie: otherUser.cookie },
+    });
+    assert.equal(forbiddenDelete.status, 404);
+
+    const expenseDelete = await fetch(`${baseUrl}/api/transactions/${expense.id}`, {
+      method: 'DELETE',
+      headers: { Cookie: owner.cookie },
+    });
+    assert.equal(expenseDelete.status, 200);
+    const deletedExpense = (await expenseDelete.json()).transaction;
+    assert.equal(deletedExpense.id, expense.id);
+    assert.equal(deletedExpense.type, 'EXPENSE');
+
+    const deletedExpenseRead = await fetch(`${baseUrl}/api/transactions/${expense.id}`, {
+      headers: { Cookie: owner.cookie },
+    });
+    assert.equal(deletedExpenseRead.status, 404);
+
+    const incomeDelete = await fetch(`${baseUrl}/api/transactions/${income.id}`, {
+      method: 'DELETE',
+      headers: { Cookie: owner.cookie },
+    });
+    assert.equal(incomeDelete.status, 200);
+    assert.equal((await incomeDelete.json()).transaction.type, 'INCOME');
+
+    const emptyIncomes = await fetch(`${baseUrl}/api/incomes`, {
+      headers: { Cookie: owner.cookie },
+    });
+    assert.equal(emptyIncomes.status, 200);
+    assert.deepEqual((await emptyIncomes.json()).incomes, []);
+
+    const repeatedDelete = await fetch(`${baseUrl}/api/transactions/${income.id}`, {
+      method: 'DELETE',
+      headers: { Cookie: owner.cookie },
+    });
+    assert.equal(repeatedDelete.status, 404);
   } finally {
     try {
       if (testUsers.length) {

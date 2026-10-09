@@ -108,4 +108,35 @@ async function update(userId, transactionId, data) {
   }
 }
 
-module.exports = { getByUser, update };
+async function remove(userId, transactionId) {
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+    const transaction = await findByUser(userId, transactionId, connection);
+
+    if (!transaction) {
+      throw new AppError('Movimentacao nao encontrada.', 404, 'transaction_not_found');
+    }
+
+    const [result] = await connection.execute(
+      `DELETE FROM transactions
+       WHERE id = ? AND user_id = ?`,
+      [transactionId, userId],
+    );
+
+    if (result.affectedRows !== 1) {
+      throw new AppError('Nao foi possivel excluir a movimentacao.', 409, 'transaction_delete_conflict');
+    }
+
+    await connection.commit();
+    return transaction;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+module.exports = { getByUser, remove, update };
