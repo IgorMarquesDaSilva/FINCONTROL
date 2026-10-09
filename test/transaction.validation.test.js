@@ -35,6 +35,7 @@ test('edicao aplica as validacoes de cadastro para receitas e despesas', () => {
     'transactionDate',
   ]);
   assert.equal(expenseResult.errors.amount, 'O valor da despesa deve ser maior que zero.');
+  assert.equal(expenseResult.errors.description, undefined);
 });
 
 test('edicao rejeita tipos de movimentacao desconhecidos', () => {

@@ -27,7 +27,7 @@ async function register(baseUrl, suffix) {
   };
 }
 
-test('edita receita e despesa sem permitir acesso entre usuarios', async () => {
+test('cadastra e edita receitas e despesas sem permitir acesso entre usuarios', async () => {
   const server = await new Promise((resolve) => {
     const listener = app.listen(0, '127.0.0.1', () => resolve(listener));
   });
@@ -75,18 +75,28 @@ test('edita receita e despesa sem permitir acesso entre usuarios', async () => {
     assert.equal(updatedIncome.amount, 950.5);
     assert.equal(updatedIncome.category.name, 'Renda academica');
 
-    const [categoryResult] = await pool.execute(
-      `INSERT INTO categories (user_id, name, type)
-       VALUES (?, 'Transporte', 'EXPENSE')`,
-      [owner.user.id],
-    );
-    const [expenseResult] = await pool.execute(
-      `INSERT INTO transactions (user_id, category_id, type, description, amount, transaction_date)
-       VALUES (?, ?, 'EXPENSE', 'Passagem', 12.00, '2026-10-03')`,
-      [owner.user.id, categoryResult.insertId],
-    );
+    const expenseCreation = await fetch(`${baseUrl}/api/expenses`, {
+      method: 'POST',
+      headers: { Cookie: owner.cookie, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        description: '',
+        amount: '12.00',
+        transactionDate: '2026-10-03',
+        categoryName: 'Transporte',
+      }),
+    });
+    assert.equal(expenseCreation.status, 201);
+    const expense = (await expenseCreation.json()).expense;
+    assert.equal(expense.type, 'EXPENSE');
+    assert.equal(expense.description, '');
 
-    const expenseUpdate = await fetch(`${baseUrl}/api/transactions/${expenseResult.insertId}`, {
+    const expenseList = await fetch(`${baseUrl}/api/expenses`, {
+      headers: { Cookie: owner.cookie },
+    });
+    assert.equal(expenseList.status, 200);
+    assert.equal((await expenseList.json()).expenses[0].id, expense.id);
+
+    const expenseUpdate = await fetch(`${baseUrl}/api/transactions/${expense.id}`, {
       method: 'PUT',
       headers: { Cookie: owner.cookie, 'Content-Type': 'application/json' },
       body: JSON.stringify({

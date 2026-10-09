@@ -49,7 +49,11 @@ function validateTransaction(input = {}, type = 'INCOME') {
   const amountResult = normalizeAmount(input.amount, transactionLabel);
   const errors = {};
 
-  if (description.length < 2 || description.length > 180) {
+  const descriptionIsInvalid = description.length > 180
+    || (normalizedType === 'INCOME' && description.length < 2)
+    || (normalizedType === 'EXPENSE' && description.length === 1);
+
+  if (descriptionIsInvalid) {
     errors.description = 'Informe uma descricao entre 2 e 180 caracteres.';
   }
 

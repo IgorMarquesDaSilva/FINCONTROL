@@ -8,16 +8,22 @@ const toast = document.querySelector('[data-toast]');
 const sidebar = document.querySelector('[data-sidebar]');
 const incomeForm = document.querySelector('[data-income-form]');
 const incomeList = document.querySelector('[data-income-list]');
+const expenseForm = document.querySelector('[data-expense-form]');
+const expenseList = document.querySelector('[data-expense-list]');
 const balanceTotal = document.querySelector('[data-balance-total]');
 const balanceHelper = document.querySelector('[data-balance-helper]');
 const monthIncomeTotal = document.querySelector('[data-month-income-total]');
 const incomeHelper = document.querySelector('[data-income-helper]');
+const monthExpenseTotal = document.querySelector('[data-month-expense-total]');
+const expenseHelper = document.querySelector('[data-expense-helper]');
 const editDialog = document.querySelector('[data-edit-dialog]');
 const editForm = document.querySelector('[data-edit-transaction-form]');
 const editDialogTitle = document.querySelector('[data-edit-dialog-title]');
+const editDescriptionLabel = document.querySelector('[data-edit-description-label]');
 
 let toastTimer;
 let incomes = [];
+let expenses = [];
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -76,52 +82,67 @@ function currentMonthKey() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function pluralizeIncome(count) {
-  return `${count} receita${count === 1 ? '' : 's'} cadastrada${count === 1 ? '' : 's'}`;
+function pluralizeTransaction(count) {
+  return `${count} movimentaç${count === 1 ? 'ão' : 'ões'} cadastrada${count === 1 ? '' : 's'}`;
 }
 
-function setDefaultIncomeDate() {
-  const dateInput = incomeForm.elements.namedItem('transactionDate');
-  if (!dateInput.value) dateInput.value = todayIsoDate();
+function setDefaultTransactionDates() {
+  [incomeForm, expenseForm].forEach((form) => {
+    const dateInput = form.elements.namedItem('transactionDate');
+    if (!dateInput.value) dateInput.value = todayIsoDate();
+  });
 }
 
-function updateIncomeSummary() {
-  const total = incomes.reduce((sum, income) => sum + Number(income.amount || 0), 0);
+function updateFinancialSummary() {
+  const incomeTotal = incomes.reduce((sum, income) => sum + Number(income.amount || 0), 0);
+  const expenseTotal = expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
   const monthKey = currentMonthKey();
-  const monthTotal = incomes
+  const monthIncome = incomes
     .filter((income) => String(income.transactionDate || '').startsWith(monthKey))
     .reduce((sum, income) => sum + Number(income.amount || 0), 0);
+  const monthExpense = expenses
+    .filter((expense) => String(expense.transactionDate || '').startsWith(monthKey))
+    .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+  const transactionCount = incomes.length + expenses.length;
 
-  balanceTotal.textContent = formatCurrency(total);
-  monthIncomeTotal.textContent = formatCurrency(monthTotal);
-  balanceHelper.textContent = incomes.length ? pluralizeIncome(incomes.length) : 'Comece adicionando uma receita';
-  incomeHelper.textContent = monthTotal > 0 ? 'Receitas registradas neste mês' : 'Nenhuma entrada neste mês';
+  balanceTotal.textContent = formatCurrency(incomeTotal - expenseTotal);
+  monthIncomeTotal.textContent = formatCurrency(monthIncome);
+  monthExpenseTotal.textContent = formatCurrency(monthExpense);
+  balanceHelper.textContent = transactionCount
+    ? pluralizeTransaction(transactionCount)
+    : 'Cadastre sua primeira movimentação';
+  incomeHelper.textContent = monthIncome > 0 ? 'Receitas registradas neste mês' : 'Nenhuma entrada neste mês';
+  expenseHelper.textContent = monthExpense > 0 ? 'Despesas registradas neste mês' : 'Nenhuma despesa neste mês';
 }
 
-function renderIncomes() {
-  incomeList.replaceChildren();
+function renderTransactions(listElement, transactions, type) {
+  const isExpense = type === 'EXPENSE';
+  const transactionLabel = isExpense ? 'despesa' : 'receita';
+  listElement.replaceChildren();
 
-  if (!incomes.length) {
+  if (!transactions.length) {
     const emptyState = document.createElement('div');
     emptyState.className = 'empty-state empty-state--compact';
-    emptyState.innerHTML = '<span aria-hidden="true">↕</span><h3>Seu histórico começa aqui</h3><p>Cadastre sua primeira receita para acompanhar quanto entra no mês.</p>';
-    incomeList.append(emptyState);
-    updateIncomeSummary();
+    emptyState.innerHTML = isExpense
+      ? '<span aria-hidden="true">↘</span><h3>Nenhuma despesa ainda</h3><p>Registre um gasto para acompanhar para onde seu dinheiro está indo.</p>'
+      : '<span aria-hidden="true">↕</span><h3>Seu histórico começa aqui</h3><p>Cadastre sua primeira receita para acompanhar quanto entra no mês.</p>';
+    listElement.append(emptyState);
+    updateFinancialSummary();
     return;
   }
 
-  incomes.forEach((income) => {
+  transactions.forEach((transaction) => {
     const item = document.createElement('div');
-    item.className = 'income-item';
+    item.className = `income-item${isExpense ? ' income-item--expense' : ''}`;
 
     const details = document.createElement('div');
     const description = document.createElement('strong');
     const meta = document.createElement('small');
     const category = document.createElement('span');
-    description.textContent = income.description;
+    description.textContent = transaction.description || 'Sem descrição';
     category.className = 'income-item__category';
-    category.textContent = income.category?.name || 'Receita';
-    meta.append(category, ` - ${formatDate(income.transactionDate)}`);
+    category.textContent = transaction.category?.name || (isExpense ? 'Despesa' : 'Receita');
+    meta.append(category, ` - ${formatDate(transaction.transactionDate)}`);
     details.append(description, meta);
 
     const actions = document.createElement('div');
@@ -129,28 +150,41 @@ function renderIncomes() {
 
     const amount = document.createElement('span');
     amount.className = 'income-item__amount';
-    amount.textContent = formatCurrency(income.amount);
+    amount.textContent = `${isExpense ? '- ' : ''}${formatCurrency(transaction.amount)}`;
 
     const editButton = document.createElement('button');
     editButton.className = 'income-item__edit';
     editButton.type = 'button';
-    editButton.dataset.editTransaction = income.id;
-    editButton.setAttribute('aria-label', `Editar receita ${income.description}`);
+    editButton.dataset.editTransaction = transaction.id;
+    editButton.setAttribute('aria-label', `Editar ${transactionLabel} ${transaction.description || 'sem descrição'}`);
     editButton.textContent = 'Editar';
 
     actions.append(amount, editButton);
     item.append(details, actions);
-    incomeList.append(item);
+    listElement.append(item);
   });
 
-  updateIncomeSummary();
+  updateFinancialSummary();
 }
 
-async function loadIncomes() {
+function renderIncomes() {
+  renderTransactions(incomeList, incomes, 'INCOME');
+}
+
+function renderExpenses() {
+  renderTransactions(expenseList, expenses, 'EXPENSE');
+}
+
+async function loadFinancialData() {
   try {
-    const payload = await api('/api/incomes');
-    incomes = payload.incomes || [];
+    const [incomePayload, expensePayload] = await Promise.all([
+      api('/api/incomes'),
+      api('/api/expenses'),
+    ]);
+    incomes = incomePayload.incomes || [];
+    expenses = expensePayload.expenses || [];
     renderIncomes();
+    renderExpenses();
   } catch (error) {
     showToast(error.message, 'error');
   }
@@ -190,10 +224,14 @@ function transactionFormData(form) {
   };
 }
 
-function validateTransactionForm(data, transactionLabel) {
+function validateTransactionForm(data, transactionLabel, descriptionRequired = true) {
   const errors = {};
 
-  if (data.description.length < 2) errors.description = 'Informe uma descricao.';
+  if ((descriptionRequired && data.description.length < 2) || data.description.length === 1) {
+    errors.description = descriptionRequired
+      ? 'Informe uma descricao.'
+      : 'Use ao menos dois caracteres ou deixe a descricao vazia.';
+  }
   if (!data.amount || Number(data.amount) <= 0) errors.amount = 'Informe um valor maior que zero.';
   if (!data.transactionDate) errors.transactionDate = `Informe a data da ${transactionLabel}.`;
   if (data.categoryName.length < 2) errors.categoryName = 'Informe uma categoria.';
@@ -214,6 +252,8 @@ async function openTransactionEditor(transactionId) {
     editForm.elements.namedItem('amount').value = Number(transaction.amount).toFixed(2);
     editForm.elements.namedItem('transactionDate').value = transaction.transactionDate;
     editForm.elements.namedItem('categoryName').value = transaction.category?.name || '';
+    editForm.elements.namedItem('description').required = transaction.type === 'INCOME';
+    editDescriptionLabel.textContent = transaction.type === 'EXPENSE' ? 'Descrição (opcional)' : 'Descrição';
     editDialogTitle.textContent = `Editar ${transactionLabel}`;
     editDialog.showModal();
     editForm.elements.namedItem('description').focus();
@@ -250,8 +290,8 @@ function showDashboard(user) {
   authView.hidden = true;
   dashboardView.hidden = false;
   document.title = `Visão geral — FINCONTROL`;
-  setDefaultIncomeDate();
-  void loadIncomes();
+  setDefaultTransactionDates();
+  void loadFinancialData();
 }
 
 document.querySelectorAll('[data-show-register]').forEach((button) => {
@@ -349,7 +389,7 @@ incomeForm.addEventListener('submit', async (event) => {
     });
     incomes = [payload.income, ...incomes.filter((income) => income.id !== payload.income.id)].slice(0, 20);
     incomeForm.reset();
-    setDefaultIncomeDate();
+    setDefaultTransactionDates();
     renderIncomes();
     showToast('Receita cadastrada com sucesso.');
   } catch (error) {
@@ -360,9 +400,41 @@ incomeForm.addEventListener('submit', async (event) => {
   }
 });
 
-incomeList.addEventListener('click', (event) => {
-  const editButton = event.target.closest('[data-edit-transaction]');
-  if (editButton) void openTransactionEditor(editButton.dataset.editTransaction);
+expenseForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  clearErrors(expenseForm);
+  const data = transactionFormData(expenseForm);
+  const clientErrors = validateTransactionForm(data, 'despesa', false);
+
+  if (Object.keys(clientErrors).length) {
+    displayErrors(expenseForm, clientErrors);
+    return;
+  }
+
+  try {
+    setLoading(expenseForm, true);
+    const payload = await api('/api/expenses', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    expenses = [payload.expense, ...expenses.filter((expense) => expense.id !== payload.expense.id)].slice(0, 20);
+    expenseForm.reset();
+    setDefaultTransactionDates();
+    renderExpenses();
+    showToast('Despesa cadastrada com sucesso.');
+  } catch (error) {
+    displayErrors(expenseForm, error.fields);
+    showToast(error.message, 'error');
+  } finally {
+    setLoading(expenseForm, false);
+  }
+});
+
+[incomeList, expenseList].forEach((listElement) => {
+  listElement.addEventListener('click', (event) => {
+    const editButton = event.target.closest('[data-edit-transaction]');
+    if (editButton) void openTransactionEditor(editButton.dataset.editTransaction);
+  });
 });
 
 editForm.addEventListener('submit', async (event) => {
@@ -371,7 +443,11 @@ editForm.addEventListener('submit', async (event) => {
   const transactionId = editForm.elements.namedItem('transactionId').value;
   const transactionLabel = editForm.dataset.transactionType === 'EXPENSE' ? 'despesa' : 'receita';
   const data = transactionFormData(editForm);
-  const clientErrors = validateTransactionForm(data, transactionLabel);
+  const clientErrors = validateTransactionForm(
+    data,
+    transactionLabel,
+    editForm.dataset.transactionType !== 'EXPENSE',
+  );
 
   if (Object.keys(clientErrors).length) {
     displayErrors(editForm, clientErrors);
@@ -390,6 +466,11 @@ editForm.addEventListener('submit', async (event) => {
         Number(income.id) === Number(payload.transaction.id) ? payload.transaction : income
       ));
       renderIncomes();
+    } else {
+      expenses = expenses.map((expense) => (
+        Number(expense.id) === Number(payload.transaction.id) ? payload.transaction : expense
+      ));
+      renderExpenses();
     }
 
     closeTransactionEditor();
@@ -413,6 +494,8 @@ editDialog.addEventListener('click', (event) => {
 editDialog.addEventListener('close', () => {
   editForm.reset();
   delete editForm.dataset.transactionType;
+  editForm.elements.namedItem('description').required = false;
+  editDescriptionLabel.textContent = 'Descrição';
   clearErrors(editForm);
 });
 
@@ -423,7 +506,9 @@ document.querySelector('[data-logout]').addEventListener('click', async () => {
     // A interface encerra a sessão mesmo se a resposta for interrompida.
   }
   incomes = [];
+  expenses = [];
   renderIncomes();
+  renderExpenses();
   showAuth('login');
   showToast('Você saiu da sua conta.');
 });
@@ -442,6 +527,13 @@ document.querySelectorAll('[data-focus-income-form]').forEach((button) => {
     setMenu(false);
     incomeForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
     incomeForm.elements.namedItem('description')?.focus();
+  });
+});
+document.querySelectorAll('[data-focus-expense-form]').forEach((button) => {
+  button.addEventListener('click', () => {
+    setMenu(false);
+    expenseForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    expenseForm.elements.namedItem('amount')?.focus();
   });
 });
 document.querySelectorAll('[data-demo-action]').forEach((button) => {

@@ -12,6 +12,7 @@ Esta primeira entrega inclui:
 - sessão autenticada em cookie `httpOnly`;
 - restauração de sessão, área inicial autenticada e logout;
 - cadastro e histórico recente de receitas;
+- cadastro e histórico recente de despesas, com atualização imediata do saldo;
 - edição validada de receitas e despesas, sempre limitada ao usuário autenticado;
 - limite de tentativas nas rotas de autenticação.
 
@@ -124,6 +125,8 @@ FINCONTROL/
 | `POST` | `/api/auth/logout` | Encerrar a sessão |
 | `GET` | `/api/incomes` | Listar receitas recentes do usuário |
 | `POST` | `/api/incomes` | Cadastrar uma receita |
+| `GET` | `/api/expenses` | Listar despesas recentes do usuário |
+| `POST` | `/api/expenses` | Cadastrar uma despesa |
 | `GET` | `/api/transactions/:id` | Carregar uma movimentação do usuário para edição |
 | `PUT` | `/api/transactions/:id` | Atualizar valor, categoria, descrição e data |
 
@@ -140,4 +143,4 @@ FINCONTROL/
 
 ## Próximas funcionalidades
 
-A área autenticada já está preparada visualmente para receber despesas, categorias, metas, conteúdos educativos e demais backlogs ainda não implementadas.
+A área autenticada já está preparada visualmente para receber categorias, metas, conteúdos educativos e demais backlogs ainda não implementadas.
