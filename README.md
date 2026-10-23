@@ -132,8 +132,15 @@ FINCONTROL/
 | `PUT` | `/api/transactions/:id` | Atualizar valor, categoria, descrição e data |
 | `DELETE` | `/api/transactions/:id` | Excluir uma movimentação do usuário |
 | `GET` | `/api/reports/monthly?month=AAAA-MM` | Resumo mensal, comparação com o mês anterior, despesas por categoria e maiores gastos |
+| `GET` | `/api/budgets?year=AAAA&month=MM` | Consultar orçamentos do período com valor gasto e status atualizado |
+| `GET` | `/api/budgets/:id` | Consultar um orçamento do usuário autenticado |
+| `POST` | `/api/budgets` | Criar orçamento por categoria e período |
+| `PUT` | `/api/budgets/:id` | Alterar categoria, período ou limite do orçamento |
+| `DELETE` | `/api/budgets/:id` | Excluir orçamento |
 
 O relatório mensal exige uma sessão autenticada e consulta as movimentações pelo identificador do usuário da sessão. O parâmetro `month` aceita o formato `AAAA-MM` (anos entre 2000 e 2200).
+
+Os endpoints de orçamento exigem sessão autenticada e aceitam apenas categorias de despesa do próprio usuário. O consumo soma as despesas da categoria dentro do período sempre que um orçamento é consultado; o status é `normal` abaixo de 80%, `attention` a partir de 80% e `exceeded` ao atingir ou ultrapassar o limite. O banco impede mais de um orçamento para a mesma categoria e período do usuário.
 
 ## Segurança aplicada
 

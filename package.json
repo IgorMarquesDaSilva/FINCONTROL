@@ -8,7 +8,7 @@
     "dev": "node --watch server.js",
     "start": "node server.js",
     "test": "node --test",
-    "test:integration": "node --test integration/auth.integration.js integration/transaction.integration.js",
+    "test:integration": "node --test integration/auth.integration.js integration/transaction.integration.js integration/budget.integration.js",
     "db:check": "node scripts/check-database.js"
   },
   "engines": {
