@@ -20,6 +20,20 @@ const reportSection = document.querySelector('[data-monthly-report]');
 const reportMonthInput = document.querySelector('[data-report-month]');
 const reportEmpty = document.querySelector('[data-report-empty]');
 const reportError = document.querySelector('[data-report-error]');
+const budgetPlanning = document.querySelector('[data-budget-planning]');
+const budgetMonthInput = document.querySelector('[data-budget-month]');
+const budgetForm = document.querySelector('[data-budget-form]');
+const budgetCategorySelect = document.querySelector('[data-budget-category]');
+const budgetLimitInput = document.querySelector('[data-budget-limit]');
+const budgetList = document.querySelector('[data-budget-list]');
+const budgetLoading = document.querySelector('[data-budget-loading]');
+const budgetError = document.querySelector('[data-budget-error]');
+const budgetEmpty = document.querySelector('[data-budget-empty]');
+const budgetNoCategories = document.querySelector('[data-budget-no-categories]');
+const budgetFormError = document.querySelector('[data-budget-form-error]');
+const budgetCancelButton = document.querySelector('[data-budget-cancel]');
+const budgetDeleteDialog = document.querySelector('[data-budget-delete-dialog]');
+const budgetDeleteForm = document.querySelector('[data-budget-delete-form]');
 const editDialog = document.querySelector('[data-edit-dialog]');
 const editForm = document.querySelector('[data-edit-transaction-form]');
 const editDialogTitle = document.querySelector('[data-edit-dialog-title]');
@@ -36,6 +50,9 @@ let toastTimer;
 let incomes = [];
 let expenses = [];
 let reportRequestId = 0;
+let budgetRequestId = 0;
+let budgetCategories = [];
+let monthlyBudgets = [];
 
 const chartColors = ['#20b981', '#ff9f68', '#6683e8', '#bf83d5', '#e1b44c', '#55a9c4', '#e27483', '#82936e'];
 
@@ -375,6 +392,193 @@ async function loadMonthlyReport() {
   }
 }
 
+function selectedBudgetPeriod() {
+  const [year, month] = (budgetMonthInput.value || currentMonthKey()).split('-').map(Number);
+  return { year, month };
+}
+
+function budgetPeriodQuery() {
+  const period = selectedBudgetPeriod();
+  return `year=${period.year}&month=${String(period.month).padStart(2, '0')}`;
+}
+
+function populateBudgetCategories(selectedCategoryId = '') {
+  const editingId = budgetForm.dataset.budgetId;
+  const reservedCategories = new Set(
+    monthlyBudgets
+      .filter((budget) => String(budget.id) !== String(editingId || ''))
+      .map((budget) => String(budget.category.id)),
+  );
+  const availableCategories = budgetCategories.filter((category) => (
+    !reservedCategories.has(String(category.id)) || String(category.id) === String(selectedCategoryId)
+  ));
+  budgetCategorySelect.replaceChildren();
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = availableCategories.length ? 'Selecione uma categoria' : 'Todas as categorias já têm limite';
+  budgetCategorySelect.append(placeholder);
+  availableCategories.forEach((category) => {
+    const option = document.createElement('option');
+    option.value = category.id;
+    option.textContent = category.name;
+    budgetCategorySelect.append(option);
+  });
+  budgetCategorySelect.value = selectedCategoryId ? String(selectedCategoryId) : '';
+  budgetCategorySelect.disabled = !availableCategories.length;
+  document.querySelector('[data-budget-submit]').disabled = !availableCategories.length;
+}
+
+function renderBudgetSummary(report, budgets) {
+  const current = report.current;
+  const planned = budgets.reduce((sum, budget) => sum + Number(budget.limitAmount), 0);
+  document.querySelector('[data-budget-income]').textContent = formatCurrency(current.income);
+  document.querySelector('[data-budget-planned]').textContent = formatCurrency(planned);
+  document.querySelector('[data-budget-spent]').textContent = formatCurrency(current.expense);
+  document.querySelector('[data-budget-available]').textContent = formatCurrency(current.balance);
+  document.querySelector('[data-budget-planned-helper]').textContent = `${budgets.length} limite${budgets.length === 1 ? '' : 's'} por categoria`;
+}
+
+function createBudgetAction(label, className, action, budget) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = className;
+  button.dataset[action] = budget.id;
+  button.textContent = label;
+  button.setAttribute('aria-label', `${label} o limite de ${budget.category.name}`);
+  return button;
+}
+
+function renderBudgetList(budgets, categories) {
+  budgetList.replaceChildren();
+  document.querySelector('[data-budget-list-count]').textContent = budgets.length
+    ? `${budgets.length} limite${budgets.length === 1 ? '' : 's'}`
+    : '';
+  budgetEmpty.hidden = budgets.length > 0 || categories.length === 0;
+  budgetNoCategories.hidden = categories.length > 0;
+
+  budgets.forEach((budget) => {
+    const card = document.createElement('article');
+    card.className = `budget-item budget-item--${budget.status}`;
+    const top = document.createElement('div');
+    top.className = 'budget-item__top';
+    const details = document.createElement('div');
+    const name = document.createElement('h4');
+    name.textContent = budget.category.name;
+    const caption = document.createElement('p');
+    caption.textContent = `${formatCurrency(budget.spentAmount)} gastos de ${formatCurrency(budget.limitAmount)}`;
+    details.append(name, caption);
+    const badge = document.createElement('span');
+    badge.className = 'budget-status';
+    badge.textContent = budget.statusLabel;
+    top.append(details, badge);
+
+    const progress = document.createElement('progress');
+    progress.className = 'budget-progress';
+    progress.max = 100;
+    progress.value = Math.min(100, Math.max(0, Number(budget.percentageUsed)));
+    progress.setAttribute('aria-label', `${budget.category.name}: ${Number(budget.percentageUsed).toFixed(0)}% do limite utilizado`);
+
+    const foot = document.createElement('div');
+    foot.className = 'budget-item__foot';
+    const percentage = document.createElement('strong');
+    percentage.textContent = `${Number(budget.percentageUsed).toFixed(0)}% utilizado`;
+    const remaining = document.createElement('span');
+    remaining.textContent = budget.remainingAmount >= 0
+      ? `${formatCurrency(budget.remainingAmount)} disponíveis`
+      : `${formatCurrency(Math.abs(budget.remainingAmount))} acima do limite`;
+    foot.append(percentage, remaining);
+
+    const actions = document.createElement('div');
+    actions.className = 'budget-item__actions';
+    actions.append(
+      createBudgetAction('Editar', 'budget-action', 'editBudget', budget),
+      createBudgetAction('Excluir', 'budget-action budget-action--delete', 'deleteBudget', budget),
+    );
+    card.append(top, progress, foot, actions);
+    budgetList.append(card);
+  });
+  populateBudgetCategories(budgetForm.dataset.categoryId || '');
+}
+
+async function loadBudgetPlanning() {
+  if (!budgetMonthInput.value) budgetMonthInput.value = currentMonthKey();
+  const requestId = ++budgetRequestId;
+  budgetPlanning.setAttribute('aria-busy', 'true');
+  budgetLoading.hidden = false;
+  budgetList.hidden = true;
+  budgetError.hidden = true;
+  budgetEmpty.hidden = true;
+  budgetNoCategories.hidden = true;
+
+  try {
+    const [categoryPayload, budgetPayload, reportPayload] = await Promise.all([
+      api('/api/budgets/categories'),
+      api(`/api/budgets?${budgetPeriodQuery()}`),
+      api(`/api/reports/monthly?month=${encodeURIComponent(budgetMonthInput.value)}`),
+    ]);
+    if (requestId !== budgetRequestId) return;
+    budgetCategories = categoryPayload.categories || [];
+    monthlyBudgets = budgetPayload.budgets || [];
+    renderBudgetSummary(reportPayload.report, monthlyBudgets);
+    renderBudgetList(monthlyBudgets, budgetCategories);
+    budgetList.hidden = false;
+  } catch (error) {
+    if (requestId !== budgetRequestId) return;
+    budgetError.textContent = error.message;
+    budgetError.hidden = false;
+  } finally {
+    if (requestId === budgetRequestId) {
+      budgetLoading.hidden = true;
+      budgetPlanning.setAttribute('aria-busy', 'false');
+    }
+  }
+}
+
+function clearBudgetFormErrors() {
+  clearErrors(budgetForm);
+  budgetFormError.hidden = true;
+  budgetFormError.textContent = '';
+}
+
+function resetBudgetForm() {
+  budgetForm.reset();
+  delete budgetForm.dataset.budgetId;
+  delete budgetForm.dataset.categoryId;
+  document.querySelector('[data-budget-form-eyebrow]').textContent = 'Novo limite';
+  document.querySelector('[data-budget-form-title]').textContent = 'Planeje uma categoria';
+  document.querySelector('[data-budget-form-description]').textContent = 'Defina um valor mensal para acompanhar seus gastos.';
+  document.querySelector('[data-budget-submit] [data-button-label]').textContent = 'Adicionar limite';
+  budgetCancelButton.hidden = true;
+  clearBudgetFormErrors();
+  populateBudgetCategories();
+}
+
+function editBudget(budgetId) {
+  const budget = monthlyBudgets.find((item) => String(item.id) === String(budgetId));
+  if (!budget) return;
+  clearBudgetFormErrors();
+  budgetForm.dataset.budgetId = budget.id;
+  budgetForm.dataset.categoryId = budget.category.id;
+  document.querySelector('[data-budget-form-eyebrow]').textContent = 'Editar limite';
+  document.querySelector('[data-budget-form-title]').textContent = `Limite de ${budget.category.name}`;
+  document.querySelector('[data-budget-form-description]').textContent = `Ajuste o valor planejado para ${periodLabel({ year: budget.year, month: budget.month })}.`;
+  document.querySelector('[data-budget-submit] [data-button-label]').textContent = 'Salvar alterações';
+  budgetCancelButton.hidden = false;
+  populateBudgetCategories(budget.category.id);
+  budgetCategorySelect.value = String(budget.category.id);
+  budgetLimitInput.value = Number(budget.limitAmount).toFixed(2);
+  budgetForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  budgetCategorySelect.focus();
+}
+
+function openBudgetDeletion(budgetId) {
+  const budget = monthlyBudgets.find((item) => String(item.id) === String(budgetId));
+  if (!budget) return;
+  budgetDeleteForm.elements.namedItem('budgetId').value = budget.id;
+  document.querySelector('[data-budget-delete-category]').textContent = budget.category.name;
+  budgetDeleteDialog.showModal();
+}
+
 function clearErrors(form) {
   form.querySelectorAll('[aria-invalid="true"]').forEach((field) => field.removeAttribute('aria-invalid'));
   form.querySelectorAll('[data-error-for]').forEach((element) => { element.textContent = ''; });
@@ -501,6 +705,7 @@ function showDashboard(user) {
   reportMonthInput.value ||= currentMonthKey();
   setDefaultTransactionDates();
   void loadFinancialData();
+  void loadBudgetPlanning();
 }
 
 document.querySelectorAll('[data-show-register]').forEach((button) => {
@@ -602,6 +807,7 @@ incomeForm.addEventListener('submit', async (event) => {
     renderIncomes();
     showToast('Receita cadastrada com sucesso.');
     void loadMonthlyReport();
+    void loadBudgetPlanning();
   } catch (error) {
     displayErrors(incomeForm, error.fields);
     showToast(error.message, 'error');
@@ -633,6 +839,7 @@ expenseForm.addEventListener('submit', async (event) => {
     renderExpenses();
     showToast('Despesa cadastrada com sucesso.');
     void loadMonthlyReport();
+    void loadBudgetPlanning();
   } catch (error) {
     displayErrors(expenseForm, error.fields);
     showToast(error.message, 'error');
@@ -640,6 +847,85 @@ expenseForm.addEventListener('submit', async (event) => {
     setLoading(expenseForm, false);
   }
 });
+
+budgetForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  clearBudgetFormErrors();
+  const period = selectedBudgetPeriod();
+  const categoryId = budgetCategorySelect.value;
+  const amount = budgetLimitInput.value.trim();
+  const errors = {};
+  if (!categoryId) errors.categoryId = 'Selecione uma categoria.';
+  if (!amount || !Number.isFinite(Number(amount)) || Number(amount) <= 0) {
+    errors.amount = 'Informe um limite maior que zero.';
+  }
+  if (Object.keys(errors).length) {
+    displayErrors(budgetForm, errors);
+    return;
+  }
+
+  const budgetId = budgetForm.dataset.budgetId;
+  try {
+    setLoading(budgetForm, true);
+    await api(budgetId ? `/api/budgets/${budgetId}` : '/api/budgets', {
+      method: budgetId ? 'PUT' : 'POST',
+      body: JSON.stringify({ categoryId: Number(categoryId), year: period.year, month: period.month, amount }),
+    });
+    resetBudgetForm();
+    await loadBudgetPlanning();
+    showToast(budgetId ? 'Limite atualizado com sucesso.' : 'Limite adicionado com sucesso.');
+  } catch (error) {
+    if (Object.keys(error.fields || {}).length) displayErrors(budgetForm, error.fields);
+    else {
+      budgetFormError.textContent = error.message;
+      budgetFormError.hidden = false;
+    }
+    showToast(error.message, 'error');
+  } finally {
+    setLoading(budgetForm, false);
+  }
+});
+
+budgetList.addEventListener('click', (event) => {
+  const editButton = event.target.closest('[data-edit-budget]');
+  const deleteButton = event.target.closest('[data-delete-budget]');
+  if (editButton) editBudget(editButton.dataset.editBudget);
+  if (deleteButton) openBudgetDeletion(deleteButton.dataset.deleteBudget);
+});
+
+budgetMonthInput.addEventListener('change', () => {
+  resetBudgetForm();
+  void loadBudgetPlanning();
+});
+
+budgetCancelButton.addEventListener('click', resetBudgetForm);
+
+budgetDeleteForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const budgetId = budgetDeleteForm.elements.namedItem('budgetId').value;
+  try {
+    setLoading(budgetDeleteForm, true);
+    await api(`/api/budgets/${budgetId}`, { method: 'DELETE' });
+    budgetDeleteDialog.close();
+    resetBudgetForm();
+    await loadBudgetPlanning();
+    showToast('Limite removido com sucesso.');
+  } catch (error) {
+    showToast(error.message, 'error');
+  } finally {
+    setLoading(budgetDeleteForm, false);
+  }
+});
+
+document.querySelectorAll('[data-close-budget-delete]').forEach((button) => {
+  button.addEventListener('click', () => budgetDeleteDialog.close());
+});
+
+budgetDeleteDialog.addEventListener('click', (event) => {
+  if (event.target === budgetDeleteDialog) budgetDeleteDialog.close();
+});
+
+budgetDeleteDialog.addEventListener('close', () => budgetDeleteForm.reset());
 
 [incomeList, expenseList].forEach((listElement) => {
   listElement.addEventListener('click', (event) => {
@@ -690,6 +976,7 @@ editForm.addEventListener('submit', async (event) => {
     closeTransactionEditor();
     showToast(payload.message);
     void loadMonthlyReport();
+    void loadBudgetPlanning();
   } catch (error) {
     displayErrors(editForm, error.fields);
     showToast(error.message, 'error');
@@ -734,6 +1021,7 @@ deleteForm.addEventListener('submit', async (event) => {
     closeTransactionDeletion();
     showToast(payload.message);
     void loadMonthlyReport();
+    void loadBudgetPlanning();
   } catch (error) {
     showToast(error.message, 'error');
   } finally {
@@ -761,6 +1049,10 @@ document.querySelector('[data-logout]').addEventListener('click', async () => {
   }
   incomes = [];
   expenses = [];
+  budgetCategories = [];
+  monthlyBudgets = [];
+  budgetList.replaceChildren();
+  resetBudgetForm();
   renderIncomes();
   renderExpenses();
   showAuth('login');

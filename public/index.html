@@ -400,14 +400,80 @@
               </div>
             </article>
 
-            <article class="content-card journey-card dashboard-grid__wide" id="planejamento">
-              <span class="journey-card__tag">Primeiros passos</span>
-              <h2>Monte sua base financeira</h2>
-              <ul>
-                <li class="is-done"><span>✓</span><div><strong>Crie sua conta</strong><small>Primeiro passo concluído</small></div></li>
-                <li><span>2</span><div><strong>Registre sua renda</strong><small>Entenda quanto entra</small></div></li>
-                <li><span>3</span><div><strong>Defina uma meta</strong><small>Tenha um motivo para guardar</small></div></li>
-              </ul>
+            <article class="budget-planning-card dashboard-grid__wide" id="planejamento" data-budget-planning aria-labelledby="budget-planning-title" aria-busy="true">
+              <header class="budget-planning-heading">
+                <div>
+                  <span class="eyebrow"><span></span> Planejamento mensal</span>
+                  <h2 id="budget-planning-title">Dê um destino para o seu dinheiro</h2>
+                  <p>Organize limites por categoria e acompanhe os gastos do mês.</p>
+                </div>
+                <div class="report-period">
+                  <label for="budget-month">Mês do planejamento</label>
+                  <input id="budget-month" type="month" data-budget-month>
+                </div>
+              </header>
+
+              <div class="budget-summary" aria-label="Resumo do planejamento mensal">
+                <article><span>Orçamento total</span><strong data-budget-income>R$ 0,00</strong><small>Renda registrada no mês</small></article>
+                <article><span>Valor planejado</span><strong data-budget-planned>R$ 0,00</strong><small data-budget-planned-helper>Limites por categoria</small></article>
+                <article><span>Valor gasto</span><strong data-budget-spent>R$ 0,00</strong><small>Despesas registradas no mês</small></article>
+                <article><span>Saldo disponível</span><strong data-budget-available>R$ 0,00</strong><small>Renda menos despesas</small></article>
+              </div>
+
+              <div class="budget-workspace">
+                <section class="budget-list-panel" aria-labelledby="budget-list-title">
+                  <div class="budget-list-heading">
+                    <div><span>Seus limites</span><h3 id="budget-list-title">Por categoria</h3></div>
+                    <small data-budget-list-count></small>
+                  </div>
+                  <p class="budget-loading" data-budget-loading role="status">Carregando seu planejamento…</p>
+                  <p class="budget-error" data-budget-error role="alert" hidden></p>
+                  <div class="budget-empty" data-budget-empty hidden role="status">
+                    <span aria-hidden="true">◎</span><h4>Nenhum limite para este mês</h4>
+                    <p>Escolha uma categoria e defina quanto quer gastar. Você pode ajustar tudo depois.</p>
+                  </div>
+                  <div class="budget-empty" data-budget-no-categories hidden role="status">
+                    <span aria-hidden="true">＋</span><h4>Crie sua primeira categoria</h4>
+                    <p>Registre uma despesa para criar a categoria. Depois, ela ficará disponível para receber um limite mensal.</p>
+                    <a href="#despesas" class="budget-empty__link">Registrar despesa</a>
+                  </div>
+                  <div class="budget-list" data-budget-list aria-live="polite"></div>
+                </section>
+
+                <form class="budget-form" data-budget-form novalidate>
+                  <span class="budget-form__eyebrow" data-budget-form-eyebrow>Novo limite</span>
+                  <h3 data-budget-form-title>Planeje uma categoria</h3>
+                  <p data-budget-form-description>Defina um valor mensal para acompanhar seus gastos.</p>
+
+                  <div class="form-field">
+                    <label for="budget-category">Categoria</label>
+                    <div class="input-wrap">
+                      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H10l2 2h5.5A2.5 2.5 0 0 1 20 9.5v7A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z"/></svg>
+                      <select id="budget-category" name="categoryId" required data-budget-category>
+                        <option value="">Carregando categorias…</option>
+                      </select>
+                    </div>
+                    <span class="field-error" data-error-for="categoryId"></span>
+                  </div>
+
+                  <div class="form-field">
+                    <label for="budget-limit">Limite mensal</label>
+                    <div class="input-wrap">
+                      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v18M17 7.5c-.8-1-2-1.5-3.8-1.5-2.1 0-3.7 1-3.7 2.7 0 4.1 8 1.6 8 5.9 0 1.8-1.7 3-4.1 3-1.9 0-3.4-.6-4.4-1.8"/></svg>
+                      <input id="budget-limit" name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00" required data-budget-limit>
+                    </div>
+                    <span class="field-error" data-error-for="amount"></span>
+                  </div>
+
+                  <p class="budget-form__error" data-budget-form-error role="alert" hidden></p>
+                  <button class="primary-button primary-button--compact" type="submit" data-budget-submit>
+                    <span data-button-label>Adicionar limite</span>
+                    <span class="button-arrow" aria-hidden="true">→</span>
+                    <span class="spinner" aria-hidden="true"></span>
+                  </button>
+                  <button class="budget-cancel" type="button" data-budget-cancel hidden>Cancelar edição</button>
+                </form>
+              </div>
             </article>
           </section>
         </div>
@@ -504,6 +570,20 @@
       </form>
     </dialog>
   </main>
+
+    <dialog class="delete-dialog" data-budget-delete-dialog aria-labelledby="delete-budget-title">
+      <form data-budget-delete-form>
+        <input name="budgetId" type="hidden">
+        <div class="delete-dialog__icon" aria-hidden="true">!</div>
+        <span class="delete-dialog__eyebrow">Remover limite</span>
+        <h2 id="delete-budget-title">Excluir este orçamento?</h2>
+        <p>O limite de <strong data-budget-delete-category>categoria</strong> será removido deste mês. As despesas registradas permanecem no seu histórico.</p>
+        <div class="delete-dialog__actions">
+          <button class="secondary-button" type="button" data-close-budget-delete>Cancelar</button>
+          <button class="danger-button" type="submit"><span data-button-label>Sim, excluir limite</span><span class="spinner" aria-hidden="true"></span></button>
+        </div>
+      </form>
+    </dialog>
 
   <script src="/js/app.js" defer></script>
 </body>

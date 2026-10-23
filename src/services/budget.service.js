@@ -36,6 +36,16 @@ async function listByUser(userId, { year, month }) {
   return rows.map(mapBudget);
 }
 
+async function listExpenseCategoriesByUser(userId) {
+  const [rows] = await pool.execute(
+    `SELECT id, name FROM categories
+     WHERE user_id = ? AND type IN ('EXPENSE', 'BOTH')
+     ORDER BY name ASC, id ASC`,
+    [userId],
+  );
+  return rows.map((row) => ({ id: row.id, name: row.name }));
+}
+
 async function getByUser(userId, budgetId) {
   const [periodRows] = await pool.execute(
     `SELECT reference_year, reference_month
@@ -125,4 +135,4 @@ async function remove(userId, budgetId) {
   return { id: budgetId };
 }
 
-module.exports = { create, getByUser, listByUser, remove, update };
+module.exports = { create, getByUser, listByUser, listExpenseCategoriesByUser, remove, update };

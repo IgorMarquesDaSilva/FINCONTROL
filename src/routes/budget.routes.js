@@ -30,6 +30,15 @@ router.get('/', async (request, response, next) => {
   }
 });
 
+router.get('/categories', async (request, response, next) => {
+  try {
+    const categories = await budgetService.listExpenseCategoriesByUser(request.user.id);
+    response.json({ categories });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/:id', async (request, response, next) => {
   try {
     const budgetId = parseBudgetId(request.params.id);

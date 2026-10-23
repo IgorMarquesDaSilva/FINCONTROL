@@ -133,6 +133,7 @@ FINCONTROL/
 | `DELETE` | `/api/transactions/:id` | Excluir uma movimentação do usuário |
 | `GET` | `/api/reports/monthly?month=AAAA-MM` | Resumo mensal, comparação com o mês anterior, despesas por categoria e maiores gastos |
 | `GET` | `/api/budgets?year=AAAA&month=MM` | Consultar orçamentos do período com valor gasto e status atualizado |
+| `GET` | `/api/budgets/categories` | Consultar categorias de despesa do usuário para planejar limites |
 | `GET` | `/api/budgets/:id` | Consultar um orçamento do usuário autenticado |
 | `POST` | `/api/budgets` | Criar orçamento por categoria e período |
 | `PUT` | `/api/budgets/:id` | Alterar categoria, período ou limite do orçamento |

@@ -68,6 +68,10 @@ test('gerencia orçamentos por usuário e recalcula consumo pelas despesas atuai
     const foreignCategoryId = otherExpenseResult.body.expense.category.id;
     const categoryId = firstExpenseResult.body.expense.category.id;
 
+    const categories = await request(baseUrl, '/api/budgets/categories', owner.cookie);
+    assert.equal(categories.response.status, 200);
+    assert.deepEqual(categories.body.categories.map((category) => category.name), ['Transporte']);
+
     const income = await request(baseUrl, '/api/incomes', owner.cookie, {
       method: 'POST',
       body: JSON.stringify({
