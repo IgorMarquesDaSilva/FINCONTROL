@@ -226,6 +226,63 @@
             <article class="metric-card"><span>Saídas no mês</span><strong data-month-expense-total>R$ 0,00</strong><small class="expense" data-expense-helper>Nenhuma despesa neste mês</small></article>
           </section>
 
+          <section class="report-section" aria-labelledby="monthly-report-title" data-monthly-report aria-busy="true">
+            <div class="report-heading">
+              <div>
+                <span class="eyebrow"><span></span> Seu dinheiro em perspectiva</span>
+                <h2 id="monthly-report-title">Relatório mensal</h2>
+                <p>Veja como suas entradas e gastos evoluíram.</p>
+              </div>
+              <div class="report-period">
+                <label for="report-month">Mês do relatório</label>
+                <input id="report-month" type="month" data-report-month aria-controls="report-content">
+              </div>
+            </div>
+
+            <div id="report-content" data-report-content>
+              <div class="report-kpis" aria-label="Indicadores do mês">
+                <article><span>Receitas</span><strong data-report-income>R$ 0,00</strong><small data-report-income-change>—</small></article>
+                <article><span>Despesas</span><strong data-report-expense>R$ 0,00</strong><small data-report-expense-change>—</small></article>
+                <article><span>Saldo do mês</span><strong data-report-balance>R$ 0,00</strong><small data-report-transaction-count>0 movimentações</small></article>
+              </div>
+
+              <div class="report-charts">
+                <article class="report-card">
+                  <div class="report-card__heading"><div><span>Fluxo do mês</span><h3>Receitas e despesas</h3></div></div>
+                  <div class="flow-chart" data-flow-chart role="img" aria-label="Gráfico de receitas e despesas"></div>
+                  <ul class="chart-legend" aria-hidden="true"><li><i class="legend-income"></i>Receitas</li><li><i class="legend-expense"></i>Despesas</li></ul>
+                  <p class="visually-hidden" data-flow-description></p>
+                </article>
+
+                <article class="report-card">
+                  <div class="report-card__heading"><div><span>Para onde foi</span><h3>Despesas por categoria</h3></div></div>
+                  <div class="category-chart-area">
+                    <div class="category-donut" data-category-donut role="img" aria-label="Gráfico de despesas por categoria"></div>
+                    <ul class="category-legend" data-category-legend aria-label="Valores por categoria"></ul>
+                  </div>
+                  <p class="visually-hidden" data-category-description></p>
+                </article>
+              </div>
+
+              <div class="report-bottom-grid">
+                <article class="report-card comparison-card">
+                  <div class="report-card__heading"><div><span>Mês contra mês</span><h3>Comparação com <span data-previous-month-label>o mês anterior</span></h3></div></div>
+                  <div class="comparison-values" data-comparison-values></div>
+                  <p class="comparison-note" data-comparison-note></p>
+                </article>
+                <article class="report-card top-expenses-card">
+                  <div class="report-card__heading"><div><span>Fique de olho</span><h3>Maiores gastos</h3></div></div>
+                  <ol class="top-expenses-list" data-top-expenses></ol>
+                </article>
+              </div>
+              <div class="report-empty" data-report-empty hidden role="status">
+                <span aria-hidden="true">◷</span><h3>Nenhuma movimentação neste período</h3>
+                <p>Escolha outro mês ou registre uma receita ou despesa para começar a acompanhar seu dinheiro.</p>
+              </div>
+            </div>
+            <p class="report-error" data-report-error role="status" hidden></p>
+          </section>
+
           <section class="dashboard-grid">
             <article class="content-card income-card" id="receitas">
               <div class="content-card__heading"><div><span>Receitas</span><h2>Cadastrar nova receita</h2></div><button type="button" data-focus-income-form>Nova receita</button></div>

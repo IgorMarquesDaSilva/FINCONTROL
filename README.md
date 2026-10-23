@@ -131,6 +131,9 @@ FINCONTROL/
 | `GET` | `/api/transactions/:id` | Carregar uma movimentação do usuário para edição |
 | `PUT` | `/api/transactions/:id` | Atualizar valor, categoria, descrição e data |
 | `DELETE` | `/api/transactions/:id` | Excluir uma movimentação do usuário |
+| `GET` | `/api/reports/monthly?month=AAAA-MM` | Resumo mensal, comparação com o mês anterior, despesas por categoria e maiores gastos |
+
+O relatório mensal exige uma sessão autenticada e consulta as movimentações pelo identificador do usuário da sessão. O parâmetro `month` aceita o formato `AAAA-MM` (anos entre 2000 e 2200).
 
 ## Segurança aplicada
 

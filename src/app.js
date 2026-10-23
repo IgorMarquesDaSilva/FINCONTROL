@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth.routes');
 const incomeRoutes = require('./routes/income.routes');
 const expenseRoutes = require('./routes/expense.routes');
 const transactionRoutes = require('./routes/transaction.routes');
+const reportRoutes = require('./routes/report.routes');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -34,6 +35,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/incomes', incomeRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/reports', reportRoutes);
 app.use(express.static(publicDirectory, { extensions: ['html'] }));
 
 app.use('/api', notFound);

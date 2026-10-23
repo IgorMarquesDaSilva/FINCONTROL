@@ -16,6 +16,10 @@ const monthIncomeTotal = document.querySelector('[data-month-income-total]');
 const incomeHelper = document.querySelector('[data-income-helper]');
 const monthExpenseTotal = document.querySelector('[data-month-expense-total]');
 const expenseHelper = document.querySelector('[data-expense-helper]');
+const reportSection = document.querySelector('[data-monthly-report]');
+const reportMonthInput = document.querySelector('[data-report-month]');
+const reportEmpty = document.querySelector('[data-report-empty]');
+const reportError = document.querySelector('[data-report-error]');
 const editDialog = document.querySelector('[data-edit-dialog]');
 const editForm = document.querySelector('[data-edit-transaction-form]');
 const editDialogTitle = document.querySelector('[data-edit-dialog-title]');
@@ -31,6 +35,9 @@ const deleteAmount = document.querySelector('[data-delete-amount]');
 let toastTimer;
 let incomes = [];
 let expenses = [];
+let reportRequestId = 0;
+
+const chartColors = ['#20b981', '#ff9f68', '#6683e8', '#bf83d5', '#e1b44c', '#55a9c4', '#e27483', '#82936e'];
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -199,8 +206,172 @@ async function loadFinancialData() {
     expenses = expensePayload.expenses || [];
     renderIncomes();
     renderExpenses();
+    await loadMonthlyReport();
   } catch (error) {
     showToast(error.message, 'error');
+  }
+}
+
+function periodLabel(period) {
+  return new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+    .format(new Date(Date.UTC(period.year, period.month - 1, 1)));
+}
+
+function renderReportCategories(categories, expenseTotal) {
+  const donut = document.querySelector('[data-category-donut]');
+  const legend = document.querySelector('[data-category-legend]');
+  const description = document.querySelector('[data-category-description]');
+  legend.replaceChildren();
+
+  if (!categories.length || expenseTotal <= 0) {
+    donut.style.background = 'conic-gradient(#e8eeec 0 100%)';
+    donut.setAttribute('aria-label', 'Sem despesas por categoria neste período.');
+    description.textContent = 'Sem despesas por categoria neste período.';
+    return;
+  }
+
+  let cursor = 0;
+  const segments = categories.map((category, index) => {
+    const start = cursor;
+    cursor += Math.max(0, Number(category.percentage));
+    return `${chartColors[index % chartColors.length]} ${start}% ${cursor}%`;
+  });
+  donut.style.background = `conic-gradient(${segments.join(', ')})`;
+  donut.setAttribute('aria-label', `Distribuição de despesas por categoria: ${categories.map((item) => `${item.name}, ${Number(item.percentage).toFixed(1)} por cento`).join('; ')}.`);
+  description.textContent = `Despesas por categoria: ${categories.map((item) => `${item.name}: ${formatCurrency(item.amount)} (${Number(item.percentage).toFixed(1)}%)`).join('; ')}.`;
+
+  categories.forEach((category, index) => {
+    const item = document.createElement('li');
+    const swatch = document.createElement('i');
+    swatch.style.setProperty('--category-color', chartColors[index % chartColors.length]);
+    swatch.setAttribute('aria-hidden', 'true');
+    const label = document.createElement('span');
+    label.textContent = category.name;
+    const amount = document.createElement('strong');
+    amount.textContent = formatCurrency(category.amount);
+    const percentage = document.createElement('small');
+    percentage.textContent = `${Number(category.percentage).toFixed(0)}%`;
+    item.append(swatch, label, amount, percentage);
+    legend.append(item);
+  });
+}
+
+function appendComparisonRow(container, label, current, previous, kind) {
+  const row = document.createElement('div');
+  row.className = 'comparison-row';
+  const name = document.createElement('span');
+  name.textContent = label;
+  const values = document.createElement('div');
+  values.className = 'comparison-row__values';
+  const currentValue = document.createElement('strong');
+  currentValue.textContent = formatCurrency(current);
+  const previousValue = document.createElement('small');
+  previousValue.textContent = `antes ${formatCurrency(previous)}`;
+  const change = document.createElement('span');
+  const delta = current - previous;
+  const ratio = previous ? Math.abs(delta / previous) * 100 : (current ? 100 : 0);
+  const isBetter = kind === 'expense' ? delta <= 0 : delta >= 0;
+  change.className = `comparison-change ${isBetter ? 'is-positive' : 'is-negative'}`;
+  change.textContent = `${delta > 0 ? '+' : delta < 0 ? '−' : ''}${formatCurrency(Math.abs(delta))} · ${previous ? `${ratio.toFixed(0)}%` : current ? 'novo' : '0%'}`;
+  values.append(currentValue, previousValue);
+  row.append(name, values, change);
+  container.append(row);
+}
+
+function renderMonthlyReport(report) {
+  const { current, previous, period, previousPeriod, expenseCategories, topExpenses } = report;
+  const totalTransactions = Number(current.transactionCount);
+  const hasTransactions = totalTransactions > 0;
+  reportEmpty.hidden = hasTransactions;
+  reportSection.querySelectorAll('.report-kpis, .report-charts, .report-bottom-grid')
+    .forEach((element) => { element.hidden = !hasTransactions; });
+
+  monthIncomeTotal.textContent = formatCurrency(current.income);
+  monthExpenseTotal.textContent = formatCurrency(current.expense);
+  incomeHelper.textContent = current.income > 0 ? `Receitas em ${periodLabel(period)}` : `Nenhuma entrada em ${periodLabel(period)}`;
+  expenseHelper.textContent = current.expense > 0 ? `Despesas em ${periodLabel(period)}` : `Nenhuma despesa em ${periodLabel(period)}`;
+
+  document.querySelector('[data-report-income]').textContent = formatCurrency(current.income);
+  document.querySelector('[data-report-expense]').textContent = formatCurrency(current.expense);
+  document.querySelector('[data-report-balance]').textContent = formatCurrency(current.balance);
+  document.querySelector('[data-report-transaction-count]').textContent = pluralizeTransaction(totalTransactions);
+  document.querySelector('[data-report-income-change]').textContent = previous.income
+    ? `${current.income >= previous.income ? '↑' : '↓'} ${Math.abs((current.income - previous.income) / previous.income * 100).toFixed(0)}% vs. mês anterior`
+    : (current.income ? 'Primeiras receitas do período' : 'Sem receitas no período anterior');
+  document.querySelector('[data-report-expense-change]').textContent = previous.expense
+    ? `${current.expense <= previous.expense ? '↓' : '↑'} ${Math.abs((current.expense - previous.expense) / previous.expense * 100).toFixed(0)}% vs. mês anterior`
+    : (current.expense ? 'Primeiras despesas do período' : 'Sem despesas no período anterior');
+
+  const flowChart = document.querySelector('[data-flow-chart]');
+  const max = Math.max(current.income, current.expense, 1);
+  flowChart.replaceChildren();
+  [['Receitas', current.income, 'flow-bar--income'], ['Despesas', current.expense, 'flow-bar--expense']].forEach(([label, amount, className]) => {
+    const column = document.createElement('div');
+    column.className = 'flow-column';
+    const value = document.createElement('strong');
+    value.textContent = formatCurrency(amount);
+    const track = document.createElement('div');
+    track.className = 'flow-track';
+    const bar = document.createElement('span');
+    bar.className = `flow-bar ${className}`;
+    bar.style.height = `${amount ? Math.max(4, Number(amount) / max * 100) : 0}%`;
+    track.append(bar);
+    const caption = document.createElement('span');
+    caption.textContent = label;
+    column.append(value, track, caption);
+    flowChart.append(column);
+  });
+  document.querySelector('[data-flow-description]').textContent = `Neste mês, receitas de ${formatCurrency(current.income)} e despesas de ${formatCurrency(current.expense)}.`;
+  renderReportCategories(expenseCategories, current.expense);
+
+  document.querySelector('[data-previous-month-label]').textContent = periodLabel(previousPeriod);
+  const comparisonValues = document.querySelector('[data-comparison-values]');
+  comparisonValues.replaceChildren();
+  appendComparisonRow(comparisonValues, 'Receitas', current.income, previous.income, 'income');
+  appendComparisonRow(comparisonValues, 'Despesas', current.expense, previous.expense, 'expense');
+  appendComparisonRow(comparisonValues, 'Saldo', current.balance, previous.balance, 'income');
+  document.querySelector('[data-comparison-note]').textContent = previous.transactionCount
+    ? `${previous.transactionCount} movimentações em ${periodLabel(previousPeriod)}.`
+    : `Não há movimentações em ${periodLabel(previousPeriod)} para comparar.`;
+
+  const topList = document.querySelector('[data-top-expenses]');
+  topList.replaceChildren();
+  topExpenses.forEach((expense) => {
+    const item = document.createElement('li');
+    const details = document.createElement('div');
+    const title = document.createElement('strong');
+    title.textContent = expense.description || 'Sem descrição';
+    const meta = document.createElement('small');
+    meta.textContent = `${expense.category} · ${formatDate(expense.transactionDate)}`;
+    const amount = document.createElement('span');
+    amount.textContent = formatCurrency(expense.amount);
+    details.append(title, meta);
+    item.append(details, amount);
+    topList.append(item);
+  });
+  if (!topExpenses.length) {
+    const item = document.createElement('li');
+    item.className = 'top-expenses-empty';
+    item.textContent = 'Nenhuma despesa registrada neste mês.';
+    topList.append(item);
+  }
+}
+
+async function loadMonthlyReport() {
+  if (!reportMonthInput.value) reportMonthInput.value = currentMonthKey();
+  const requestId = ++reportRequestId;
+  reportSection.setAttribute('aria-busy', 'true');
+  reportError.hidden = true;
+  try {
+    const payload = await api(`/api/reports/monthly?month=${encodeURIComponent(reportMonthInput.value)}`);
+    if (requestId !== reportRequestId) return;
+    renderMonthlyReport(payload.report);
+  } catch (error) {
+    if (requestId !== reportRequestId) return;
+    reportError.textContent = error.message;
+    reportError.hidden = false;
+  } finally {
+    if (requestId === reportRequestId) reportSection.setAttribute('aria-busy', 'false');
   }
 }
 
@@ -327,6 +498,7 @@ function showDashboard(user) {
   authView.hidden = true;
   dashboardView.hidden = false;
   document.title = `Visão geral — FINCONTROL`;
+  reportMonthInput.value ||= currentMonthKey();
   setDefaultTransactionDates();
   void loadFinancialData();
 }
@@ -429,6 +601,7 @@ incomeForm.addEventListener('submit', async (event) => {
     setDefaultTransactionDates();
     renderIncomes();
     showToast('Receita cadastrada com sucesso.');
+    void loadMonthlyReport();
   } catch (error) {
     displayErrors(incomeForm, error.fields);
     showToast(error.message, 'error');
@@ -459,6 +632,7 @@ expenseForm.addEventListener('submit', async (event) => {
     setDefaultTransactionDates();
     renderExpenses();
     showToast('Despesa cadastrada com sucesso.');
+    void loadMonthlyReport();
   } catch (error) {
     displayErrors(expenseForm, error.fields);
     showToast(error.message, 'error');
@@ -515,6 +689,7 @@ editForm.addEventListener('submit', async (event) => {
 
     closeTransactionEditor();
     showToast(payload.message);
+    void loadMonthlyReport();
   } catch (error) {
     displayErrors(editForm, error.fields);
     showToast(error.message, 'error');
@@ -558,6 +733,7 @@ deleteForm.addEventListener('submit', async (event) => {
 
     closeTransactionDeletion();
     showToast(payload.message);
+    void loadMonthlyReport();
   } catch (error) {
     showToast(error.message, 'error');
   } finally {
@@ -617,6 +793,8 @@ document.querySelectorAll('[data-focus-expense-form]').forEach((button) => {
 document.querySelectorAll('[data-demo-action]').forEach((button) => {
   button.addEventListener('click', () => showToast('Essa função entra na próxima etapa do projeto.'));
 });
+
+reportMonthInput.addEventListener('change', () => { void loadMonthlyReport(); });
 
 async function restoreSession() {
   try {
