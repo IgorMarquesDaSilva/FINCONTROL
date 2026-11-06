@@ -6,6 +6,9 @@ const loginHeading = document.querySelector('[data-login-heading]');
 const registerHeading = document.querySelector('[data-register-heading]');
 const toast = document.querySelector('[data-toast]');
 const sidebar = document.querySelector('[data-sidebar]');
+const dashboardShell = document.querySelector('.dashboard-shell');
+const dashboardContent = document.querySelector('.dashboard-content');
+const pageHeader = document.querySelector('[data-current-page-header]');
 const incomeForm = document.querySelector('[data-income-form]');
 const incomeList = document.querySelector('[data-income-list]');
 const expenseForm = document.querySelector('[data-expense-form]');
@@ -24,6 +27,11 @@ const monthExpenseTotal = document.querySelector('[data-month-expense-total]');
 const expenseHelper = document.querySelector('[data-expense-helper]');
 const dashboardMonthInput = document.querySelector('[data-dashboard-month]');
 const dashboardError = document.querySelector('[data-dashboard-error]');
+const insightsSection = document.querySelector('[data-insights-section]');
+const insightsList = document.querySelector('[data-insights-list]');
+const insightsStatus = document.querySelector('[data-insights-status]');
+const insightsError = document.querySelector('[data-insights-error]');
+const insightsPeriod = document.querySelector('[data-insights-period]');
 const reportSection = document.querySelector('[data-monthly-report]');
 const reportMonthInput = document.querySelector('[data-report-month]');
 const reportEmpty = document.querySelector('[data-report-empty]');
@@ -71,11 +79,130 @@ let transactionPage = 1;
 let incomes = [];
 let expenses = [];
 let dashboardRequestId = 0;
+let insightsRequestId = 0;
+let currentUserId = null;
+let currentInsights = [];
 let reportRequestId = 0;
 let budgetRequestId = 0;
 let budgetCategories = [];
 let monthlyBudgets = [];
 let goals = [];
+
+const dashboardPages = [
+  { route: 'visao-geral', title: 'Visão geral', description: 'Seu resumo financeiro, insights e relatório mensal.', selectors: ['.welcome-row', '.metric-grid', '[data-dashboard-error]', '[data-insights-section]', '[data-monthly-report]'] },
+  { route: 'movimentacoes', title: 'Movimentações', description: 'Consulte e filtre suas receitas e despesas.', selectors: ['#movimentacoes'] },
+  { route: 'receitas', title: 'Receitas', description: 'Registre e acompanhe o dinheiro que entra.', selectors: ['.income-card'] },
+  { route: 'despesas', title: 'Despesas', description: 'Registre e acompanhe o dinheiro que sai.', selectors: ['.expense-card'] },
+  { route: 'planejamento', title: 'Planejamento', description: 'Defina limites mensais e acompanhe seus gastos.', selectors: ['[data-budget-planning]'] },
+  { route: 'metas', title: 'Metas', description: 'Organize seus objetivos e acompanhe seu progresso.', selectors: ['[data-goals-section]'] },
+  { route: 'aprenda', title: 'Aprenda', description: 'Conceitos financeiros explicados de forma simples.' },
+];
+
+function addLearningContent(container) {
+  const cards = [
+    ['Comece pelo essencial', 'Anote o que entra e o que sai. Um registro simples já ajuda a entender seus hábitos e tomar decisões com mais clareza.'],
+    ['Planeje com flexibilidade', 'Use limites mensais como referência. Se um gasto mudar, ajuste o plano sem culpa e escolha o próximo passo possível.'],
+    ['Construa uma reserva aos poucos', 'Guardar um valor pequeno com regularidade pode ajudar a lidar com despesas inesperadas. Escolha um ritmo que caiba no seu orçamento.'],
+  ];
+  const grid = document.createElement('div');
+  grid.className = 'learning-grid';
+  cards.forEach(([title, description], index) => {
+    const card = document.createElement('article');
+    card.className = 'learning-card';
+    const number = document.createElement('span');
+    number.className = 'learning-card__number';
+    number.setAttribute('aria-hidden', 'true');
+    number.textContent = `0${index + 1}`;
+    const heading = document.createElement('h2');
+    heading.textContent = title;
+    const text = document.createElement('p');
+    text.textContent = description;
+    card.append(number, heading, text);
+    grid.append(card);
+  });
+  container.append(grid);
+}
+
+function initializeDashboardPages() {
+  const oldGrid = dashboardContent.querySelector('.dashboard-grid');
+  if (oldGrid) {
+    [...oldGrid.children].forEach((content) => dashboardContent.append(content));
+    oldGrid.remove();
+  }
+
+  dashboardPages.forEach((page) => {
+    const panel = document.createElement('section');
+    panel.className = 'dashboard-page';
+    panel.id = `page-${page.route}`;
+    panel.dataset.dashboardPage = page.route;
+    panel.setAttribute('aria-labelledby', `page-title-${page.route}`);
+    panel.hidden = true;
+
+    const heading = document.createElement('header');
+    heading.className = 'dashboard-page__heading';
+    const title = document.createElement('h1');
+    title.id = `page-title-${page.route}`;
+    title.tabIndex = -1;
+    title.textContent = page.title;
+    const description = document.createElement('p');
+    description.textContent = page.description;
+    heading.append(title, description);
+    const body = document.createElement('div');
+    body.className = 'dashboard-page__body';
+    panel.append(heading, body);
+    dashboardContent.append(panel);
+
+    page.selectors?.forEach((selector) => {
+      const content = dashboardContent.querySelector(selector);
+      if (content) body.append(content);
+    });
+    if (page.route === 'aprenda') addLearningContent(body);
+  });
+
+  const welcomeTitle = dashboardContent.querySelector('.welcome-row h1');
+  if (welcomeTitle) {
+    const subheading = document.createElement('h2');
+    subheading.className = welcomeTitle.className;
+    subheading.innerHTML = welcomeTitle.innerHTML;
+    welcomeTitle.replaceWith(subheading);
+  }
+}
+
+function navigateDashboardPage(route, { focus = true } = {}) {
+  const page = dashboardPages.find((candidate) => candidate.route === route) || dashboardPages[0];
+  document.querySelectorAll('[data-dashboard-page]').forEach((panel) => {
+    panel.hidden = panel.dataset.dashboardPage !== page.route;
+  });
+  document.querySelectorAll('.sidebar-link').forEach((link) => {
+    const active = link.hash === `#${page.route}`;
+    link.classList.toggle('is-active', active);
+    if (active) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  });
+  pageHeader.textContent = page.title;
+  document.title = `${page.title} — FINCONTROL`;
+  setMenu(false);
+  if (focus) {
+    document.querySelector(`#page-title-${page.route}`)?.focus({ preventScroll: true });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+initializeDashboardPages();
+document.querySelectorAll('form [data-error-for]').forEach((error, index) => {
+  error.id ||= `form-error-${index + 1}`;
+  error.setAttribute('role', 'alert');
+  error.setAttribute('aria-live', 'assertive');
+  const field = error.closest('form')?.elements.namedItem(error.dataset.errorFor);
+  if (field) {
+    const describedBy = new Set((field.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean));
+    describedBy.add(error.id);
+    field.setAttribute('aria-describedby', [...describedBy].join(' '));
+  }
+});
+window.addEventListener('hashchange', () => {
+  if (!dashboardView.hidden) navigateDashboardPage(window.location.hash.slice(1));
+});
 
 const chartColors = ['#20b981', '#ff9f68', '#6683e8', '#bf83d5', '#e1b44c', '#55a9c4', '#e27483', '#82936e'];
 
@@ -321,6 +448,7 @@ function savingsHelper(dashboard) {
 
 async function loadDashboardSummary() {
   dashboardMonthInput.value ||= currentMonthKey();
+  void loadInsights();
   const requestId = ++dashboardRequestId;
   dashboardError.hidden = true;
 
@@ -340,6 +468,127 @@ async function loadDashboardSummary() {
     dashboardError.hidden = false;
   }
 }
+
+function dismissedInsightsStorageKey(month = dashboardMonthInput.value) {
+  return `fincontrol:dismissed-insights:${currentUserId}:${month}`;
+}
+
+function readDismissedInsights() {
+  if (!currentUserId) return [];
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(dismissedInsightsStorageKey()) || '[]');
+    return Array.isArray(saved) ? saved : [];
+  } catch (_error) {
+    return [];
+  }
+}
+
+function renderInsights(result) {
+  currentInsights = result.insights || [];
+  insightsList.replaceChildren();
+  insightsPeriod.textContent = periodLabel(result.period);
+  const dismissed = new Set(readDismissedInsights());
+  const visibleInsights = currentInsights.filter((insight) => !dismissed.has(insight.id));
+
+  if (!visibleInsights.length) {
+    insightsStatus.textContent = currentInsights.length
+      ? 'Você dispensou os insights deste período.'
+      : result.message;
+    insightsStatus.hidden = false;
+    return;
+  }
+
+  insightsStatus.textContent = '';
+  insightsStatus.hidden = true;
+  visibleInsights.forEach((insight) => {
+    const card = document.createElement('article');
+    card.className = `insight-card insight-card--${insight.type}`;
+    const header = document.createElement('div');
+    header.className = 'insight-card__header';
+    const heading = document.createElement('div');
+    const eyebrow = document.createElement('span');
+    eyebrow.textContent = 'Com base nos seus registros';
+    const title = document.createElement('h3');
+    title.textContent = insight.title;
+    heading.append(eyebrow, title);
+    const dismiss = document.createElement('button');
+    dismiss.type = 'button';
+    dismiss.className = 'insight-dismiss';
+    dismiss.dataset.dismissInsight = insight.id;
+    dismiss.textContent = 'Dispensar';
+    dismiss.setAttribute('aria-label', `Dispensar insight: ${insight.title}`);
+    header.append(heading, dismiss);
+
+    const message = document.createElement('p');
+    message.className = 'insight-card__message';
+    message.textContent = insight.message;
+    const evidenceTitle = document.createElement('strong');
+    evidenceTitle.className = 'insight-card__evidence-title';
+    evidenceTitle.textContent = 'Dados que motivaram esta orientação';
+    const evidence = document.createElement('ul');
+    evidence.className = 'insight-evidence';
+    (insight.evidence || []).forEach((fact) => {
+      const item = document.createElement('li');
+      const label = document.createElement('span');
+      label.textContent = fact.label;
+      const value = document.createElement('strong');
+      if (typeof fact.value === 'number') {
+        value.textContent = formatCurrency(fact.value);
+        if (typeof fact.percentage === 'number') {
+          value.textContent += ` (${fact.percentage > 0 ? '+' : ''}${fact.percentage.toLocaleString('pt-BR')}%)`;
+        }
+      } else {
+        value.textContent = fact.value;
+      }
+      if (typeof fact.percentagePoints === 'number') {
+        value.textContent += ` (${fact.percentagePoints > 0 ? '+' : ''}${fact.percentagePoints.toLocaleString('pt-BR')} p.p.)`;
+      }
+      item.append(label, value);
+      evidence.append(item);
+    });
+    const suggestion = document.createElement('p');
+    suggestion.className = 'insight-card__suggestion';
+    suggestion.textContent = insight.suggestion;
+    card.append(header, message, evidenceTitle, evidence, suggestion);
+    insightsList.append(card);
+  });
+}
+
+async function loadInsights() {
+  if (!currentUserId) return;
+  const month = dashboardMonthInput.value || currentMonthKey();
+  const requestId = ++insightsRequestId;
+  insightsSection.setAttribute('aria-busy', 'true');
+  insightsError.hidden = true;
+  insightsStatus.hidden = false;
+  insightsStatus.textContent = 'Analisando seus registros…';
+  try {
+    const payload = await api(`/api/insights?month=${encodeURIComponent(month)}`);
+    if (requestId !== insightsRequestId) return;
+    renderInsights(payload.insights);
+  } catch (error) {
+    if (requestId !== insightsRequestId) return;
+    insightsList.replaceChildren();
+    insightsStatus.hidden = true;
+    insightsError.textContent = `Não foi possível carregar os insights: ${error.message}`;
+    insightsError.hidden = false;
+  } finally {
+    if (requestId === insightsRequestId) insightsSection.setAttribute('aria-busy', 'false');
+  }
+}
+
+insightsList.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-dismiss-insight]');
+  if (!button) return;
+  const dismissed = new Set(readDismissedInsights());
+  dismissed.add(button.dataset.dismissInsight);
+  try {
+    window.localStorage.setItem(dismissedInsightsStorageKey(), JSON.stringify([...dismissed]));
+  } catch (_error) {
+    // A dispensa continua válida na tela atual se o armazenamento local estiver indisponível.
+  }
+  renderInsights({ insights: currentInsights, period: { year: Number(dashboardMonthInput.value.slice(0, 4)), month: Number(dashboardMonthInput.value.slice(5, 7)) }, message: '' });
+});
 
 function renderAllTransactions() {
   renderIncomes();
@@ -1014,6 +1263,12 @@ function closeTransactionDeletion() {
 
 function showAuth(mode = 'login') {
   const isRegister = mode === 'register';
+  currentUserId = null;
+  currentInsights = [];
+  insightsList.replaceChildren();
+  insightsStatus.textContent = '';
+  insightsStatus.hidden = true;
+  insightsError.hidden = true;
   authView.hidden = false;
   dashboardView.hidden = true;
   loginForm.hidden = isRegister;
@@ -1028,6 +1283,7 @@ function showAuth(mode = 'login') {
 }
 
 function showDashboard(user) {
+  currentUserId = String(user.id);
   const name = user.name?.trim() || 'Usuário';
   const firstName = name.split(/\s+/)[0];
   document.querySelectorAll('[data-user-name]').forEach((element) => { element.textContent = name; });
@@ -1036,6 +1292,10 @@ function showDashboard(user) {
   authView.hidden = true;
   dashboardView.hidden = false;
   document.title = `Visão geral — FINCONTROL`;
+  const requestedRoute = window.location.hash.slice(1);
+  const route = dashboardPages.some((page) => page.route === requestedRoute) ? requestedRoute : 'visao-geral';
+  if (window.location.hash !== `#${route}`) window.history.replaceState(null, '', `#${route}`);
+  navigateDashboardPage(route, { focus: false });
   reportMonthInput.value ||= currentMonthKey();
   dashboardMonthInput.value ||= currentMonthKey();
   setDefaultTransactionDates();
@@ -1396,26 +1656,55 @@ document.querySelector('[data-logout]').addEventListener('click', async () => {
 });
 
 function setMenu(open) {
+  const wasOpen = sidebar.classList.contains('is-open');
   sidebar.classList.toggle('is-open', open);
   document.body.classList.toggle('menu-open', open);
+  document.querySelector('[data-menu-open]')?.setAttribute('aria-expanded', String(open));
+  const isMobile = window.matchMedia('(max-width: 900px)').matches;
+  dashboardShell.inert = open && isMobile;
+  if (open && isMobile) document.querySelector('[data-menu-close]')?.focus();
+  else if (!open && wasOpen && isMobile) document.querySelector('[data-menu-open]')?.focus();
 }
 
 document.querySelector('[data-menu-open]').addEventListener('click', () => setMenu(true));
 document.querySelectorAll('[data-menu-close]').forEach((button) => button.addEventListener('click', () => setMenu(false)));
 document.querySelectorAll('.sidebar-link').forEach((link) => link.addEventListener('click', () => setMenu(false)));
-document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setMenu(false); });
+window.addEventListener('resize', () => {
+  if (sidebar.classList.contains('is-open')) {
+    dashboardShell.inert = window.matchMedia('(max-width: 900px)').matches;
+  }
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    setMenu(false);
+    return;
+  }
+  if (event.key !== 'Tab' || !sidebar.classList.contains('is-open') || !window.matchMedia('(max-width: 900px)').matches) return;
+  const focusable = [...sidebar.querySelectorAll('a[href], button:not([disabled])')]
+    .filter((element) => element.getClientRects().length > 0);
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (!first || !last) return;
+  if (event.shiftKey && (document.activeElement === first || !sidebar.contains(document.activeElement))) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && (document.activeElement === last || !sidebar.contains(document.activeElement))) {
+    event.preventDefault();
+    first.focus();
+  }
+});
 document.querySelectorAll('[data-focus-income-form]').forEach((button) => {
   button.addEventListener('click', () => {
-    setMenu(false);
-    incomeForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    incomeForm.elements.namedItem('description')?.focus();
+    if (window.location.hash !== '#receitas') window.location.hash = 'receitas';
+    else navigateDashboardPage('receitas');
+    requestAnimationFrame(() => incomeForm.elements.namedItem('description')?.focus());
   });
 });
 document.querySelectorAll('[data-focus-expense-form]').forEach((button) => {
   button.addEventListener('click', () => {
-    setMenu(false);
-    expenseForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    expenseForm.elements.namedItem('amount')?.focus();
+    if (window.location.hash !== '#despesas') window.location.hash = 'despesas';
+    else navigateDashboardPage('despesas');
+    requestAnimationFrame(() => expenseForm.elements.namedItem('amount')?.focus());
   });
 });
 document.querySelectorAll('[data-demo-action]').forEach((button) => {

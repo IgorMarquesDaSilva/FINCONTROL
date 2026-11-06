@@ -12,7 +12,7 @@
   <a class="skip-link" href="#main-content">Ir para o conteúdo</a>
   <div class="toast" data-toast role="status" aria-live="polite" hidden></div>
 
-  <main id="main-content">
+  <main id="main-content" tabindex="-1">
     <section class="auth-view" data-auth-view aria-label="Acesso ao FINCONTROL">
       <div class="auth-showcase">
         <a class="brand brand--light" href="/" aria-label="FINCONTROL — início">
@@ -169,7 +169,7 @@
     </section>
 
     <section class="dashboard-view" data-dashboard-view hidden>
-      <aside class="sidebar" data-sidebar>
+      <aside class="sidebar" id="primary-sidebar" data-sidebar aria-label="Navegação principal">
         <div class="sidebar__header">
           <a class="brand brand--light" href="/">
             <span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 16.5V8.8M10 16.5V5.5M15 16.5v-4.7M20 16.5V3.5"/></svg></span>
@@ -178,13 +178,13 @@
           <button class="icon-button sidebar-close" type="button" data-menu-close aria-label="Fechar menu">×</button>
         </div>
         <nav class="sidebar-nav" aria-label="Menu principal">
-          <a class="sidebar-link is-active" href="#visao-geral"><span>⌂</span> Visão geral</a>
-          <a class="sidebar-link" href="#movimentacoes"><span>⇅</span> Movimentações</a>
-          <a class="sidebar-link" href="#receitas"><span>↕</span> Receitas</a>
-          <a class="sidebar-link" href="#despesas"><span>↘</span> Despesas</a>
-          <a class="sidebar-link" href="#planejamento"><span>◎</span> Planejamento</a>
-          <a class="sidebar-link" href="#metas"><span>◇</span> Metas</a>
-          <a class="sidebar-link" href="#aprenda"><span>◇</span> Aprenda</a>
+          <a class="sidebar-link is-active" href="#visao-geral" aria-current="page"><span aria-hidden="true">⌂</span> Visão geral</a>
+          <a class="sidebar-link" href="#movimentacoes"><span aria-hidden="true">⇅</span> Movimentações</a>
+          <a class="sidebar-link" href="#receitas"><span aria-hidden="true">↕</span> Receitas</a>
+          <a class="sidebar-link" href="#despesas"><span aria-hidden="true">↘</span> Despesas</a>
+          <a class="sidebar-link" href="#planejamento"><span aria-hidden="true">◎</span> Planejamento</a>
+          <a class="sidebar-link" href="#metas"><span aria-hidden="true">◇</span> Metas</a>
+          <a class="sidebar-link" href="#aprenda"><span aria-hidden="true">◇</span> Aprenda</a>
         </nav>
         <div class="sidebar-tip">
           <span>Dica rápida</span>
@@ -196,10 +196,10 @@
 
       <div class="dashboard-shell">
         <header class="dashboard-header">
-          <button class="icon-button menu-button" type="button" data-menu-open aria-label="Abrir menu">☰</button>
+          <button class="icon-button menu-button" type="button" data-menu-open aria-label="Abrir menu" aria-controls="primary-sidebar" aria-expanded="false">☰</button>
           <div>
             <span class="dashboard-header__eyebrow">Minha conta</span>
-            <strong>Visão geral</strong>
+            <strong data-current-page-header>Visão geral</strong>
           </div>
           <div class="user-chip">
             <span data-user-initial>A</span>
@@ -207,7 +207,7 @@
           </div>
         </header>
 
-        <div class="dashboard-content" id="visao-geral">
+        <div class="dashboard-content">
           <section class="welcome-row">
             <div>
               <span class="eyebrow"><span></span> Tudo sob controle</span>
@@ -229,6 +229,20 @@
             <article class="metric-card"><span>Saídas no mês</span><strong data-month-expense-total>R$ 0,00</strong><small class="expense" data-expense-helper>Nenhuma despesa neste mês</small></article>
           </section>
           <p class="dashboard-summary-error" data-dashboard-error role="alert" hidden></p>
+
+          <section class="insights-section" aria-labelledby="insights-title" data-insights-section aria-busy="true">
+            <header class="insights-heading">
+              <div>
+                <span class="eyebrow"><span></span> Sinais dos seus registros</span>
+                <h2 id="insights-title">Insights do seu mês</h2>
+                <p>Comparações pessoais, com os dados que explicam cada orientação.</p>
+              </div>
+              <span class="insights-period" data-insights-period></span>
+            </header>
+            <p class="insights-status" data-insights-status role="status">Analisando seus registros…</p>
+            <p class="insights-error" data-insights-error role="alert" hidden></p>
+            <div class="insights-list" data-insights-list aria-live="polite"></div>
+          </section>
 
           <section class="movement-history" id="movimentacoes" aria-labelledby="movement-history-title">
             <header class="movement-history__heading">

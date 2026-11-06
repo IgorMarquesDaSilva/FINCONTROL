@@ -21,3 +21,13 @@ test('resumo sem receitas evita divisao por zero', () => {
     transactionCount: 1,
   });
 });
+
+test('resumo normaliza valores ausentes ou inválidos', () => {
+  assert.deepEqual(buildDashboardSummary(null, 'invalido', undefined), {
+    income: 0,
+    expense: 0,
+    balance: 0,
+    savingsPercentage: 0,
+    transactionCount: 0,
+  });
+});

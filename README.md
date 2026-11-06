@@ -83,13 +83,15 @@ npm start
 npm test
 ```
 
-Os testes rápidos cobrem a normalização e a validação dos dados de autenticação e movimentações. Com o MySQL do XAMPP em execução, rode também os fluxos completos de autenticação, receitas e edição de receitas e despesas:
+`npm test` executa em sequência os testes unitários e os testes de integração e ponta a ponta. Os testes unitários impõem cobertura mínima de 90% das linhas e 70% dos ramos nas regras financeiras de orçamento, dashboard, metas e insights. Os cenários HTTP cobrem autenticação, movimentações, orçamentos, metas, dashboard, relatório e insights, incluindo isolamento entre usuários.
+
+O comando completo requer MySQL disponível e configuração do banco em `.env` (ou os padrões do XAMPP):
 
 ```powershell
-npm run test:integration
+npm test
 ```
 
-O teste integrado cria um usuário temporário e o remove ao terminar.
+Os testes de integração criam usuários e dados temporários exclusivos e os removem ao terminar. Também é possível rodar apenas `npm run test:unit` sem MySQL ou `npm run test:integration` com MySQL ativo.
 
 ## Estrutura
 
@@ -146,10 +148,13 @@ FINCONTROL/
 | `POST` | `/api/budgets` | Criar orçamento por categoria e período |
 | `PUT` | `/api/budgets/:id` | Alterar categoria, período ou limite do orçamento |
 | `DELETE` | `/api/budgets/:id` | Excluir orçamento |
+| `GET` | `/api/insights?month=AAAA-MM` | Gerar insights pessoais com evidências para o mês e o anterior |
 
 O relatório mensal exige uma sessão autenticada e consulta as movimentações pelo identificador do usuário da sessão. O parâmetro `month` aceita o formato `AAAA-MM` (anos entre 2000 e 2200).
 
 Os endpoints de orçamento exigem sessão autenticada e aceitam apenas categorias de despesa do próprio usuário. O consumo soma as despesas da categoria dentro do período sempre que um orçamento é consultado; o status é `normal` abaixo de 80%, `attention` a partir de 80% e `exceeded` ao atingir ou ultrapassar o limite. O banco impede mais de um orçamento para a mesma categoria e período do usuário.
+
+Os insights também exigem sessão autenticada e usam somente as movimentações do usuário. As comparações usam períodos equivalentes; no mês atual, comparam o acumulado até o dia atual com o mesmo intervalo do mês anterior. A API informa quando há menos de três movimentações em um dos períodos e evita gerar conclusões nesses casos. Cada orientação inclui os valores que acionaram uma regra transparente; a dispensa fica salva localmente por usuário e mês neste navegador.
 
 ## Segurança aplicada
 

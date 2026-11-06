@@ -36,3 +36,21 @@ test('resposta calcula consumo, saldo e percentual com dados agregados', () => {
   assert.equal(result.status, 'attention');
   assert.deepEqual(result.category, { id: 4, name: 'Transporte' });
 });
+
+test('resposta de orçamento sem limite evita divisão inválida e normaliza gasto ausente', () => {
+  const result = mapBudget({
+    id: 10,
+    category_id: 5,
+    category_name: 'Lazer',
+    reference_year: 2026,
+    reference_month: 10,
+    limit_amount: '0.00',
+    spent_amount: null,
+    created_at: '2026-10-01 10:00:00',
+    updated_at: '2026-10-01 10:00:00',
+  });
+
+  assert.equal(result.spentAmount, 0);
+  assert.equal(result.percentageUsed, 0);
+  assert.equal(result.status, 'exceeded');
+});

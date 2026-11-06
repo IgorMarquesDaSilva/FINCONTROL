@@ -53,6 +53,29 @@ test('fluxo completo de cadastro, sessao, logout e login', async () => {
     });
     assert.equal(login.status, 200);
     assert.equal((await login.json()).user.email, email);
+
+    const wrongPassword = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: 'SenhaErrada123' }),
+    });
+    assert.equal(wrongPassword.status, 401);
+
+    const duplicateRegistration = await fetch(`${baseUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Teste Integracao', email, password, passwordConfirmation: password,
+      }),
+    });
+    assert.equal(duplicateRegistration.status, 409);
+
+    const invalidRegistration = await fetch(`${baseUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'A', email: 'invalido', password: '123', passwordConfirmation: '456' }),
+    });
+    assert.equal(invalidRegistration.status, 422);
   } finally {
     await pool.execute('DELETE FROM users WHERE email = ?', [email]);
     await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
