@@ -8,7 +8,6 @@ const toast = document.querySelector('[data-toast]');
 const sidebar = document.querySelector('[data-sidebar]');
 const dashboardShell = document.querySelector('.dashboard-shell');
 const dashboardContent = document.querySelector('.dashboard-content');
-const pageHeader = document.querySelector('[data-current-page-header]');
 const incomeForm = document.querySelector('[data-income-form]');
 const incomeList = document.querySelector('[data-income-list]');
 const expenseForm = document.querySelector('[data-expense-form]');
@@ -179,7 +178,6 @@ function navigateDashboardPage(route, { focus = true } = {}) {
     if (active) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
   });
-  pageHeader.textContent = page.title;
   document.title = `${page.title} — FINCONTROL`;
   setMenu(false);
   if (focus) {

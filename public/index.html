@@ -7,6 +7,7 @@
   <meta name="theme-color" content="#071b2b">
   <title>FINCONTROL — Seu dinheiro, sem complicação</title>
   <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/theme.css">
 </head>
 <body>
   <a class="skip-link" href="#main-content">Ir para o conteúdo</a>
@@ -23,29 +24,18 @@
         </a>
 
         <div class="showcase-copy">
-          <span class="eyebrow eyebrow--light"><span></span> Finanças no seu ritmo</span>
-          <h1>Seu dinheiro.<br><em>Suas escolhas.</em></h1>
-          <p>Organize sua vida financeira, entenda seus hábitos e construa seus planos — sem planilhas complicadas.</p>
+          <span class="eyebrow eyebrow--light"><span></span> Sua vida financeira, com clareza</span>
+          <h1>Seu dinheiro<br>faz parte do <em>plano.</em></h1>
+          <p>Entenda o que entra, acompanhe o que sai e escolha com mais confiança o próximo passo.</p>
         </div>
 
-        <div class="showcase-card" aria-label="Prévia do resumo financeiro">
-          <div class="showcase-card__top">
-            <div>
-              <span>Saldo deste mês</span>
-              <strong>R$ 2.480,00</strong>
-            </div>
-            <span class="growth-pill">↗ 12%</span>
-          </div>
-          <div class="mini-chart" aria-hidden="true">
-            <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-          </div>
-          <div class="showcase-card__footer">
-            <span><i class="dot dot--green"></i> Entradas <strong>R$ 3.750</strong></span>
-            <span><i class="dot dot--orange"></i> Saídas <strong>R$ 1.270</strong></span>
-          </div>
-        </div>
+        <ol class="showcase-steps" aria-label="Como o FINCONTROL ajuda você">
+          <li><span>01</span><p>Registre receitas e despesas</p></li>
+          <li><span>02</span><p>Enxergue seus hábitos</p></li>
+          <li><span>03</span><p>Planeje seus objetivos</p></li>
+        </ol>
 
-        <p class="showcase-note">Feito para quem está começando a cuidar do próprio dinheiro.</p>
+        <p class="showcase-note">Organização financeira para a vida real.</p>
       </div>
 
       <div class="auth-panel">
@@ -186,25 +176,20 @@
           <a class="sidebar-link" href="#metas"><span aria-hidden="true">◇</span> Metas</a>
           <a class="sidebar-link" href="#aprenda"><span aria-hidden="true">◇</span> Aprenda</a>
         </nav>
-        <div class="sidebar-tip">
-          <span>Dica rápida</span>
-          <p>Separar 10% do que você recebe já é um ótimo começo.</p>
+        <div class="sidebar-account">
+          <div class="user-chip">
+            <span data-user-initial>A</span>
+            <div><strong data-user-name>Usuário</strong><small>Conta pessoal</small></div>
+          </div>
+          <button class="logout-button" type="button" data-logout><span>↪</span> Sair da conta</button>
         </div>
-        <button class="logout-button" type="button" data-logout><span>↪</span> Sair da conta</button>
       </aside>
       <button class="sidebar-overlay" type="button" data-menu-close aria-label="Fechar menu"></button>
 
       <div class="dashboard-shell">
         <header class="dashboard-header">
           <button class="icon-button menu-button" type="button" data-menu-open aria-label="Abrir menu" aria-controls="primary-sidebar" aria-expanded="false">☰</button>
-          <div>
-            <span class="dashboard-header__eyebrow">Minha conta</span>
-            <strong data-current-page-header>Visão geral</strong>
-          </div>
-          <div class="user-chip">
-            <span data-user-initial>A</span>
-            <div><strong data-user-name>Usuário</strong><small>Conta pessoal</small></div>
-          </div>
+          <strong class="dashboard-header__brand">FINCONTROL</strong>
         </header>
 
         <div class="dashboard-content">
