@@ -129,6 +129,7 @@ FINCONTROL/
 | `GET` | `/api/expenses` | Listar despesas recentes do usuário |
 | `POST` | `/api/expenses` | Cadastrar uma despesa |
 | `GET` | `/api/transactions` | Listar receitas e despesas em ordem cronológica |
+| `GET` | `/api/dashboard?month=AAAA-MM` | Obter resumo e movimentações recentes do mês |
 | `GET` | `/api/transactions/:id` | Carregar uma movimentação do usuário para edição |
 | `PUT` | `/api/transactions/:id` | Atualizar valor, categoria, descrição e data |
 | `DELETE` | `/api/transactions/:id` | Excluir uma movimentação do usuário |

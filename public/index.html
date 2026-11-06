@@ -214,6 +214,7 @@
               <p>Este é o começo da sua jornada financeira.</p>
             </div>
             <div class="welcome-row__actions">
+              <label class="dashboard-period" for="dashboard-month">Mês da visão geral<input id="dashboard-month" type="month" data-dashboard-month></label>
               <button class="secondary-button" type="button" data-focus-expense-form>+ Nova despesa</button>
               <button class="primary-button primary-button--compact" type="button" data-focus-income-form>+ Nova receita</button>
             </div>
@@ -226,6 +227,7 @@
             <article class="metric-card"><span>Entradas no mês</span><strong data-month-income-total>R$ 0,00</strong><small class="positive" data-income-helper>Pronto para crescer</small></article>
             <article class="metric-card"><span>Saídas no mês</span><strong data-month-expense-total>R$ 0,00</strong><small class="expense" data-expense-helper>Nenhuma despesa neste mês</small></article>
           </section>
+          <p class="dashboard-summary-error" data-dashboard-error role="alert" hidden></p>
 
           <section class="movement-history" id="movimentacoes" aria-labelledby="movement-history-title">
             <header class="movement-history__heading">

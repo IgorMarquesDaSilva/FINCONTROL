@@ -18,6 +18,8 @@ const monthIncomeTotal = document.querySelector('[data-month-income-total]');
 const incomeHelper = document.querySelector('[data-income-helper]');
 const monthExpenseTotal = document.querySelector('[data-month-expense-total]');
 const expenseHelper = document.querySelector('[data-expense-helper]');
+const dashboardMonthInput = document.querySelector('[data-dashboard-month]');
+const dashboardError = document.querySelector('[data-dashboard-error]');
 const reportSection = document.querySelector('[data-monthly-report]');
 const reportMonthInput = document.querySelector('[data-report-month]');
 const reportEmpty = document.querySelector('[data-report-empty]');
@@ -52,6 +54,7 @@ let toastTimer;
 let transactions = [];
 let incomes = [];
 let expenses = [];
+let dashboardRequestId = 0;
 let reportRequestId = 0;
 let budgetRequestId = 0;
 let budgetCategories = [];
@@ -238,13 +241,13 @@ function createMovementAction(label, className, dataName, transaction, visibleLa
   return button;
 }
 
-function renderMovementHistory() {
+function renderMovementHistory(displayedTransactions = transactions) {
   transactionList.replaceChildren();
-  transactionCount.textContent = transactions.length
-    ? `${transactions.length} movimentaç${transactions.length === 1 ? 'ão' : 'ões'}`
+  transactionCount.textContent = displayedTransactions.length
+    ? `${displayedTransactions.length} movimentaç${displayedTransactions.length === 1 ? 'ão' : 'ões'}`
     : '';
 
-  if (!transactions.length) {
+  if (!displayedTransactions.length) {
     const empty = document.createElement('div');
     empty.className = 'movement-history__empty';
     empty.innerHTML = '<span aria-hidden="true">⇅</span><h3>Nenhuma movimentação cadastrada</h3><p>Registre uma receita ou despesa para começar seu histórico.</p>';
@@ -252,7 +255,7 @@ function renderMovementHistory() {
     return;
   }
 
-  transactions.forEach((transaction) => {
+  displayedTransactions.forEach((transaction) => {
     const isExpense = transaction.type === 'EXPENSE';
     const row = document.createElement('article');
     row.className = `movement-row${isExpense ? ' movement-row--expense' : ''}`;
@@ -290,6 +293,38 @@ function renderMovementHistory() {
   });
 }
 
+function savingsHelper(dashboard) {
+  if (!dashboard.transactionCount) return 'Nenhuma movimentação neste mês';
+  if (!dashboard.income) return 'Cadastre uma receita para medir sua economia';
+  if (dashboard.savingsPercentage < 0) {
+    return `Despesas superaram a renda em ${formatCurrency(Math.abs(dashboard.balance))}`;
+  }
+  return `${dashboard.savingsPercentage.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}% da renda preservada`;
+}
+
+async function loadDashboardSummary() {
+  dashboardMonthInput.value ||= currentMonthKey();
+  const requestId = ++dashboardRequestId;
+  dashboardError.hidden = true;
+
+  try {
+    const payload = await api(`/api/dashboard?month=${encodeURIComponent(dashboardMonthInput.value)}`);
+    if (requestId !== dashboardRequestId) return;
+    const { dashboard } = payload;
+    balanceTotal.textContent = formatCurrency(dashboard.balance);
+    monthIncomeTotal.textContent = formatCurrency(dashboard.income);
+    monthExpenseTotal.textContent = formatCurrency(dashboard.expense);
+    balanceHelper.textContent = savingsHelper(dashboard);
+    incomeHelper.textContent = dashboard.income > 0 ? 'Receitas registradas neste mês' : 'Nenhuma entrada neste mês';
+    expenseHelper.textContent = dashboard.expense > 0 ? 'Despesas registradas neste mês' : 'Nenhuma despesa neste mês';
+    renderMovementHistory(dashboard.recentTransactions || []);
+  } catch (error) {
+    if (requestId !== dashboardRequestId) return;
+    dashboardError.textContent = `Não foi possível carregar a visão geral: ${error.message}`;
+    dashboardError.hidden = false;
+  }
+}
+
 function renderAllTransactions() {
   renderIncomes();
   renderExpenses();
@@ -301,7 +336,7 @@ async function loadFinancialData() {
     const payload = await api('/api/transactions');
     replaceTransactions(payload.transactions || []);
     renderAllTransactions();
-    await loadMonthlyReport();
+    await Promise.all([loadDashboardSummary(), loadMonthlyReport()]);
   } catch (error) {
     showToast(error.message, 'error');
   }
@@ -781,6 +816,7 @@ function showDashboard(user) {
   dashboardView.hidden = false;
   document.title = `Visão geral — FINCONTROL`;
   reportMonthInput.value ||= currentMonthKey();
+  dashboardMonthInput.value ||= currentMonthKey();
   setDefaultTransactionDates();
   void loadFinancialData();
   void loadBudgetPlanning();
@@ -884,6 +920,7 @@ incomeForm.addEventListener('submit', async (event) => {
     setDefaultTransactionDates();
     renderAllTransactions();
     showToast('Receita cadastrada com sucesso.');
+    void loadDashboardSummary();
     void loadMonthlyReport();
     void loadBudgetPlanning();
   } catch (error) {
@@ -916,6 +953,7 @@ expenseForm.addEventListener('submit', async (event) => {
     setDefaultTransactionDates();
     renderAllTransactions();
     showToast('Despesa cadastrada com sucesso.');
+    void loadDashboardSummary();
     void loadMonthlyReport();
     void loadBudgetPlanning();
   } catch (error) {
@@ -1046,6 +1084,7 @@ editForm.addEventListener('submit', async (event) => {
 
     closeTransactionEditor();
     showToast(payload.message);
+    void loadDashboardSummary();
     void loadMonthlyReport();
     void loadBudgetPlanning();
   } catch (error) {
@@ -1085,6 +1124,7 @@ deleteForm.addEventListener('submit', async (event) => {
 
     closeTransactionDeletion();
     showToast(payload.message);
+    void loadDashboardSummary();
     void loadMonthlyReport();
     void loadBudgetPlanning();
   } catch (error) {
@@ -1150,6 +1190,7 @@ document.querySelectorAll('[data-demo-action]').forEach((button) => {
 });
 
 reportMonthInput.addEventListener('change', () => { void loadMonthlyReport(); });
+dashboardMonthInput.addEventListener('change', () => { void loadDashboardSummary(); });
 
 async function restoreSession() {
   try {
