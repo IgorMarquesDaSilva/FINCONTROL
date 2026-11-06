@@ -38,6 +38,16 @@ const budgetFormError = document.querySelector('[data-budget-form-error]');
 const budgetCancelButton = document.querySelector('[data-budget-cancel]');
 const budgetDeleteDialog = document.querySelector('[data-budget-delete-dialog]');
 const budgetDeleteForm = document.querySelector('[data-budget-delete-form]');
+const goalsSection = document.querySelector('[data-goals-section]');
+const goalsList = document.querySelector('[data-goals-list]');
+const goalsLoading = document.querySelector('[data-goals-loading]');
+const goalsError = document.querySelector('[data-goals-error]');
+const goalsEmpty = document.querySelector('[data-goals-empty]');
+const goalForm = document.querySelector('[data-goal-form]');
+const goalFormError = document.querySelector('[data-goal-form-error]');
+const goalCancelButton = document.querySelector('[data-goal-cancel]');
+const contributionDialog = document.querySelector('[data-goal-contribution-dialog]');
+const contributionForm = document.querySelector('[data-goal-contribution-form]');
 const editDialog = document.querySelector('[data-edit-dialog]');
 const editForm = document.querySelector('[data-edit-transaction-form]');
 const editDialogTitle = document.querySelector('[data-edit-dialog-title]');
@@ -59,6 +69,7 @@ let reportRequestId = 0;
 let budgetRequestId = 0;
 let budgetCategories = [];
 let monthlyBudgets = [];
+let goals = [];
 
 const chartColors = ['#20b981', '#ff9f68', '#6683e8', '#bf83d5', '#e1b44c', '#55a9c4', '#e27483', '#82936e'];
 
@@ -692,6 +703,140 @@ function openBudgetDeletion(budgetId) {
   budgetDeleteDialog.showModal();
 }
 
+function goalStatusLabel(status) {
+  return { ACTIVE: 'Em andamento', COMPLETED: 'Concluída', CANCELLED: 'Cancelada' }[status] || status;
+}
+
+function goalAction(label, action, goal, modifier = '') {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = `goal-action${modifier ? ` ${modifier}` : ''}`;
+  button.dataset[action] = goal.id;
+  button.textContent = label;
+  button.setAttribute('aria-label', `${label} na meta ${goal.name}`);
+  return button;
+}
+
+function renderGoals() {
+  goalsList.replaceChildren();
+  document.querySelector('[data-goals-count]').textContent = goals.length
+    ? `${goals.length} meta${goals.length === 1 ? '' : 's'}`
+    : '';
+  goalsEmpty.hidden = goals.length > 0;
+
+  goals.forEach((goal) => {
+    const card = document.createElement('article');
+    card.className = `goal-item goal-item--${goal.status.toLowerCase()}`;
+    const top = document.createElement('div');
+    top.className = 'goal-item__top';
+    const copy = document.createElement('div');
+    const name = document.createElement('h4');
+    name.textContent = goal.name;
+    const description = document.createElement('p');
+    description.textContent = goal.description || (goal.deadline ? `Prazo: ${formatDate(goal.deadline)}` : 'Sem prazo definido');
+    copy.append(name, description);
+    const status = document.createElement('span');
+    status.className = 'goal-item__status';
+    status.textContent = goalStatusLabel(goal.status);
+    top.append(copy, status);
+
+    const progress = document.createElement('progress');
+    progress.max = 100;
+    progress.value = goal.progressPercentage;
+    progress.setAttribute('aria-label', `${goal.name}: ${goal.progressPercentage}% concluída`);
+    const numbers = document.createElement('div');
+    numbers.className = 'goal-item__numbers';
+    const accumulated = document.createElement('span');
+    accumulated.innerHTML = `<strong>${formatCurrency(goal.currentAmount)}</strong> de ${formatCurrency(goal.targetAmount)}`;
+    const remaining = document.createElement('span');
+    remaining.textContent = goal.status === 'COMPLETED' ? 'Objetivo alcançado' : `${formatCurrency(goal.remainingAmount)} restantes`;
+    numbers.append(accumulated, remaining);
+
+    const actions = document.createElement('div');
+    actions.className = 'goal-item__actions';
+    if (goal.status === 'ACTIVE') {
+      actions.append(
+        goalAction('Registrar aporte', 'contributeGoal', goal, 'goal-action--primary'),
+        goalAction('Editar', 'editGoal', goal),
+        goalAction('Cancelar meta', 'cancelGoal', goal, 'goal-action--danger'),
+      );
+    } else if (goal.status === 'CANCELLED') {
+      actions.append(goalAction('Reativar meta', 'reactivateGoal', goal));
+    }
+    card.append(top, progress, numbers, actions);
+    goalsList.append(card);
+  });
+}
+
+async function loadGoals() {
+  goalsSection.setAttribute('aria-busy', 'true');
+  goalsLoading.hidden = false;
+  goalsError.hidden = true;
+  try {
+    const payload = await api('/api/goals');
+    goals = payload.goals || [];
+    renderGoals();
+  } catch (error) {
+    goalsError.textContent = error.message;
+    goalsError.hidden = false;
+  } finally {
+    goalsLoading.hidden = true;
+    goalsSection.setAttribute('aria-busy', 'false');
+  }
+}
+
+function resetGoalForm() {
+  goalForm.reset();
+  delete goalForm.dataset.goalId;
+  document.querySelector('[data-goal-form-eyebrow]').textContent = 'Nova meta';
+  document.querySelector('[data-goal-form-title]').textContent = 'Comece um objetivo';
+  goalForm.querySelector('[data-button-label]').textContent = 'Criar meta';
+  goalCancelButton.hidden = true;
+  goalFormError.hidden = true;
+  clearErrors(goalForm);
+}
+
+function editGoal(goalId) {
+  const goal = goals.find((item) => String(item.id) === String(goalId));
+  if (!goal) return;
+  goalForm.dataset.goalId = goal.id;
+  goalForm.elements.namedItem('name').value = goal.name;
+  goalForm.elements.namedItem('description').value = goal.description;
+  goalForm.elements.namedItem('targetAmount').value = goal.targetAmount.toFixed(2);
+  goalForm.elements.namedItem('currentAmount').value = goal.currentAmount.toFixed(2);
+  goalForm.elements.namedItem('deadline').value = goal.deadline || '';
+  document.querySelector('[data-goal-form-eyebrow]').textContent = 'Editar meta';
+  document.querySelector('[data-goal-form-title]').textContent = goal.name;
+  goalForm.querySelector('[data-button-label]').textContent = 'Salvar alterações';
+  goalCancelButton.hidden = false;
+  clearErrors(goalForm);
+  goalForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  goalForm.elements.namedItem('name').focus();
+}
+
+function openContribution(goalId) {
+  const goal = goals.find((item) => String(item.id) === String(goalId));
+  if (!goal) return;
+  contributionForm.elements.namedItem('goalId').value = goal.id;
+  document.querySelector('[data-contribution-goal-name]').textContent = goal.name;
+  document.querySelector('[data-contribution-helper]').textContent = `Faltam ${formatCurrency(goal.remainingAmount)} para concluir.`;
+  contributionForm.elements.namedItem('amount').max = goal.remainingAmount;
+  contributionDialog.showModal();
+  contributionForm.elements.namedItem('amount').focus();
+}
+
+async function changeGoalStatus(goalId, status) {
+  try {
+    const payload = await api(`/api/goals/${goalId}/status`, {
+      method: 'PATCH', body: JSON.stringify({ status }),
+    });
+    showToast(payload.message);
+    await loadGoals();
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
 function clearErrors(form) {
   form.querySelectorAll('[aria-invalid="true"]').forEach((field) => field.removeAttribute('aria-invalid'));
   form.querySelectorAll('[data-error-for]').forEach((element) => { element.textContent = ''; });
@@ -820,6 +965,7 @@ function showDashboard(user) {
   setDefaultTransactionDates();
   void loadFinancialData();
   void loadBudgetPlanning();
+  void loadGoals();
 }
 
 document.querySelectorAll('[data-show-register]').forEach((button) => {
@@ -1155,7 +1301,9 @@ document.querySelector('[data-logout]').addEventListener('click', async () => {
   replaceTransactions([]);
   budgetCategories = [];
   monthlyBudgets = [];
+  goals = [];
   budgetList.replaceChildren();
+  goalsList.replaceChildren();
   resetBudgetForm();
   renderAllTransactions();
   showAuth('login');
@@ -1187,6 +1335,103 @@ document.querySelectorAll('[data-focus-expense-form]').forEach((button) => {
 });
 document.querySelectorAll('[data-demo-action]').forEach((button) => {
   button.addEventListener('click', () => showToast('Essa função entra na próxima etapa do projeto.'));
+});
+
+goalForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  clearErrors(goalForm);
+  goalFormError.hidden = true;
+  const formData = new FormData(goalForm);
+  const data = {
+    name: String(formData.get('name') || '').trim(),
+    description: String(formData.get('description') || '').trim(),
+    targetAmount: String(formData.get('targetAmount') || '').trim(),
+    currentAmount: String(formData.get('currentAmount') || '0').trim() || '0',
+    deadline: String(formData.get('deadline') || '').trim(),
+  };
+  const errors = {};
+  if (data.name.length < 2) errors.name = 'Informe um nome para a meta.';
+  if (!data.targetAmount || Number(data.targetAmount) <= 0) errors.targetAmount = 'Informe um valor-alvo maior que zero.';
+  if (Number(data.currentAmount) < 0) errors.currentAmount = 'O valor guardado não pode ser negativo.';
+  if (Number(data.currentAmount) > Number(data.targetAmount)) errors.currentAmount = 'O valor guardado não pode superar o valor-alvo.';
+  if (Object.keys(errors).length) {
+    displayErrors(goalForm, errors);
+    return;
+  }
+
+  const goalId = goalForm.dataset.goalId;
+  try {
+    setLoading(goalForm, true);
+    const payload = await api(goalId ? `/api/goals/${goalId}` : '/api/goals', {
+      method: goalId ? 'PUT' : 'POST', body: JSON.stringify(data),
+    });
+    showToast(payload.message);
+    resetGoalForm();
+    await loadGoals();
+  } catch (error) {
+    displayErrors(goalForm, error.fields);
+    goalFormError.textContent = error.message;
+    goalFormError.hidden = false;
+  } finally {
+    setLoading(goalForm, false);
+  }
+});
+
+goalCancelButton.addEventListener('click', resetGoalForm);
+
+goalsList.addEventListener('click', (event) => {
+  const editButton = event.target.closest('[data-edit-goal]');
+  const contributionButton = event.target.closest('[data-contribute-goal]');
+  const cancelButton = event.target.closest('[data-cancel-goal]');
+  const reactivateButton = event.target.closest('[data-reactivate-goal]');
+  if (editButton) editGoal(editButton.dataset.editGoal);
+  if (contributionButton) openContribution(contributionButton.dataset.contributeGoal);
+  if (cancelButton) void changeGoalStatus(cancelButton.dataset.cancelGoal, 'CANCELLED');
+  if (reactivateButton) void changeGoalStatus(reactivateButton.dataset.reactivateGoal, 'ACTIVE');
+});
+
+document.querySelectorAll('[data-goal-suggestion]').forEach((button) => {
+  button.addEventListener('click', () => {
+    goalForm.elements.namedItem('name').value = button.dataset.goalSuggestion;
+    goalForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    goalForm.elements.namedItem('targetAmount').focus();
+  });
+});
+
+contributionForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  clearErrors(contributionForm);
+  const goalId = contributionForm.elements.namedItem('goalId').value;
+  const amount = contributionForm.elements.namedItem('amount').value;
+  if (!amount || Number(amount) <= 0) {
+    displayErrors(contributionForm, { amount: 'Informe um aporte maior que zero.' });
+    return;
+  }
+  try {
+    setLoading(contributionForm, true);
+    const payload = await api(`/api/goals/${goalId}/contributions`, {
+      method: 'POST', body: JSON.stringify({ amount }),
+    });
+    contributionDialog.close();
+    showToast(payload.message);
+    await loadGoals();
+  } catch (error) {
+    displayErrors(contributionForm, error.fields);
+    showToast(error.message, 'error');
+  } finally {
+    setLoading(contributionForm, false);
+  }
+});
+
+document.querySelectorAll('[data-close-goal-contribution]').forEach((button) => {
+  button.addEventListener('click', () => contributionDialog.close());
+});
+contributionDialog.addEventListener('click', (event) => {
+  if (event.target === contributionDialog) contributionDialog.close();
+});
+contributionDialog.addEventListener('close', () => {
+  contributionForm.reset();
+  clearErrors(contributionForm);
 });
 
 reportMonthInput.addEventListener('change', () => { void loadMonthlyReport(); });

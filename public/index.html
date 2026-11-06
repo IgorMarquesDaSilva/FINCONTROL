@@ -183,6 +183,7 @@
           <a class="sidebar-link" href="#receitas"><span>↕</span> Receitas</a>
           <a class="sidebar-link" href="#despesas"><span>↘</span> Despesas</a>
           <a class="sidebar-link" href="#planejamento"><span>◎</span> Planejamento</a>
+          <a class="sidebar-link" href="#metas"><span>◇</span> Metas</a>
           <a class="sidebar-link" href="#aprenda"><span>◇</span> Aprenda</a>
         </nav>
         <div class="sidebar-tip">
@@ -496,6 +497,37 @@
                 </form>
               </div>
             </article>
+
+            <article class="goals-card dashboard-grid__wide" id="metas" data-goals-section aria-labelledby="goals-title" aria-busy="true">
+              <header class="goals-heading">
+                <div><span class="eyebrow"><span></span> Seus próximos passos</span><h2 id="goals-title">Metas financeiras</h2><p>Transforme seus planos em pequenos avanços que cabem na sua rotina.</p></div>
+                <small data-goals-count></small>
+              </header>
+              <div class="goals-workspace">
+                <section class="goals-list-panel" aria-label="Lista de metas">
+                  <p class="goals-loading" data-goals-loading role="status">Carregando suas metas…</p>
+                  <p class="goals-error" data-goals-error role="alert" hidden></p>
+                  <div class="goals-empty" data-goals-empty hidden role="status">
+                    <span aria-hidden="true">◇</span><h3>Qual sonho vem primeiro?</h3><p>Comece com algo possível: uma reserva de emergência, um curso ou uma viagem planejada.</p>
+                    <div><button type="button" data-goal-suggestion="Reserva de emergência">Reserva</button><button type="button" data-goal-suggestion="Curso profissionalizante">Curso</button><button type="button" data-goal-suggestion="Viagem planejada">Viagem</button></div>
+                  </div>
+                  <div class="goals-list" data-goals-list aria-live="polite"></div>
+                </section>
+                <form class="goal-form" data-goal-form novalidate>
+                  <span class="goal-form__eyebrow" data-goal-form-eyebrow>Nova meta</span><h3 data-goal-form-title>Comece um objetivo</h3><p>Você poderá ajustar e registrar aportes a qualquer momento.</p>
+                  <div class="form-field"><label for="goal-name">Nome da meta</label><div class="input-wrap"><input id="goal-name" name="name" type="text" maxlength="120" placeholder="Ex.: reserva de emergência" required></div><span class="field-error" data-error-for="name"></span></div>
+                  <div class="goal-form__row">
+                    <div class="form-field"><label for="goal-target">Valor-alvo</label><div class="input-wrap"><input id="goal-target" name="targetAmount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00" required></div><span class="field-error" data-error-for="targetAmount"></span></div>
+                    <div class="form-field"><label for="goal-current">Já guardado</label><div class="input-wrap"><input id="goal-current" name="currentAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></div><span class="field-error" data-error-for="currentAmount"></span></div>
+                  </div>
+                  <div class="form-field"><label for="goal-deadline">Prazo <small>(opcional)</small></label><div class="input-wrap"><input id="goal-deadline" name="deadline" type="date"></div><span class="field-error" data-error-for="deadline"></span></div>
+                  <div class="form-field"><label for="goal-description">Descrição <small>(opcional)</small></label><div class="input-wrap"><input id="goal-description" name="description" type="text" maxlength="255" placeholder="Por que essa meta importa para você?"></div><span class="field-error" data-error-for="description"></span></div>
+                  <p class="goal-form__error" data-goal-form-error role="alert" hidden></p>
+                  <button class="primary-button primary-button--compact" type="submit"><span data-button-label>Criar meta</span><span class="button-arrow" aria-hidden="true">→</span><span class="spinner" aria-hidden="true"></span></button>
+                  <button class="goal-form__cancel" type="button" data-goal-cancel hidden>Cancelar edição</button>
+                </form>
+              </div>
+            </article>
           </section>
         </div>
       </div>
@@ -588,6 +620,16 @@
             <span class="spinner" aria-hidden="true"></span>
           </button>
         </div>
+      </form>
+    </dialog>
+
+    <dialog class="edit-dialog goal-contribution-dialog" data-goal-contribution-dialog aria-labelledby="goal-contribution-title">
+      <div class="edit-dialog__header"><div><span class="eyebrow"><span></span> Avance um pouco</span><h2 id="goal-contribution-title">Registrar aporte</h2><p>Meta: <strong data-contribution-goal-name></strong></p></div><button class="edit-dialog__close" type="button" data-close-goal-contribution aria-label="Fechar aporte">×</button></div>
+      <form class="edit-form" data-goal-contribution-form novalidate>
+        <input name="goalId" type="hidden">
+        <div class="form-field"><label for="goal-contribution-amount">Valor do aporte</label><div class="input-wrap"><input id="goal-contribution-amount" name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required></div><span class="field-error" data-error-for="amount"></span></div>
+        <p class="goal-contribution-helper" data-contribution-helper></p>
+        <div class="edit-dialog__actions"><button class="secondary-button" type="button" data-close-goal-contribution>Cancelar</button><button class="primary-button primary-button--compact" type="submit"><span data-button-label>Registrar aporte</span><span class="spinner" aria-hidden="true"></span></button></div>
       </form>
     </dialog>
   </main>
