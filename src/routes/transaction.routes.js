@@ -3,6 +3,7 @@ const authenticate = require('../middleware/authenticate');
 const transactionService = require('../services/transaction.service');
 const AppError = require('../errors/AppError');
 const { validateTransaction } = require('../validation/transaction');
+const { validateTransactionQuery } = require('../validation/transaction-query');
 
 const router = express.Router();
 
@@ -30,8 +31,18 @@ router.use(authenticate);
 
 router.get('/', async (request, response, next) => {
   try {
-    const transactions = await transactionService.listByUser(request.user.id);
-    response.json({ transactions });
+    const validation = validateTransactionQuery(request.query);
+    ensureValid(validation);
+    const result = await transactionService.listByUser(request.user.id, validation.data);
+    response.json({ ...result, filters: validation.data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/categories', async (request, response, next) => {
+  try {
+    response.json({ categories: await transactionService.listCategoriesByUser(request.user.id) });
   } catch (error) {
     next(error);
   }

@@ -128,12 +128,14 @@ FINCONTROL/
 | `POST` | `/api/incomes` | Cadastrar uma receita |
 | `GET` | `/api/expenses` | Listar despesas recentes do usuário |
 | `POST` | `/api/expenses` | Cadastrar uma despesa |
-| `GET` | `/api/transactions` | Listar receitas e despesas em ordem cronológica |
+| `GET` | `/api/transactions` | Listar movimentações com filtros, ordenação e paginação |
 | `GET` | `/api/dashboard?month=AAAA-MM` | Obter resumo e movimentações recentes do mês |
 | `GET/POST` | `/api/goals` | Listar e criar metas financeiras |
 | `GET/PUT/DELETE` | `/api/goals/:id` | Consultar, editar ou excluir uma meta |
 | `POST` | `/api/goals/:id/contributions` | Registrar aporte em uma meta ativa |
 | `PATCH` | `/api/goals/:id/status` | Ativar, concluir ou cancelar uma meta |
+
+`GET /api/transactions` aceita `page`, `pageSize`, `search`, `type`, `categoryId`, `dateFrom`, `dateTo`, `minAmount`, `maxAmount`, `sort` (`date` ou `amount`) e `order` (`asc` ou `desc`). Os filtros podem ser combinados e sempre consideram apenas o usuário autenticado.
 | `GET` | `/api/transactions/:id` | Carregar uma movimentação do usuário para edição |
 | `PUT` | `/api/transactions/:id` | Atualizar valor, categoria, descrição e data |
 | `DELETE` | `/api/transactions/:id` | Excluir uma movimentação do usuário |

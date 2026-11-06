@@ -121,6 +121,34 @@ test('cadastra, edita e exclui movimentacoes sem permitir acesso entre usuarios'
     assert.deepEqual(movements.map((transaction) => transaction.type), ['EXPENSE', 'INCOME']);
     assert.deepEqual(movements.map((transaction) => transaction.transactionDate), ['2026-10-04', '2026-10-02']);
 
+    const firstPage = await fetch(`${baseUrl}/api/transactions?page=1&pageSize=1`, {
+      headers: { Cookie: owner.cookie },
+    });
+    const firstPageBody = await firstPage.json();
+    assert.equal(firstPageBody.transactions.length, 1);
+    assert.equal(firstPageBody.pagination.totalItems, 2);
+    assert.equal(firstPageBody.pagination.hasNext, true);
+
+    const filteredMovements = await fetch(
+      `${baseUrl}/api/transactions?type=EXPENSE&search=Passe&minAmount=100&maxAmount=150&sort=amount&order=asc`,
+      { headers: { Cookie: owner.cookie } },
+    );
+    assert.equal(filteredMovements.status, 200);
+    const filteredBody = await filteredMovements.json();
+    assert.equal(filteredBody.transactions.length, 1);
+    assert.equal(filteredBody.transactions[0].description, 'Passe mensal');
+
+    const categoryList = await fetch(`${baseUrl}/api/transactions/categories`, {
+      headers: { Cookie: owner.cookie },
+    });
+    assert.equal(categoryList.status, 200);
+    assert.ok((await categoryList.json()).categories.some((category) => category.name === 'Mobilidade'));
+
+    const invalidQuery = await fetch(`${baseUrl}/api/transactions?pageSize=99`, {
+      headers: { Cookie: owner.cookie },
+    });
+    assert.equal(invalidQuery.status, 422);
+
     const otherUserMovements = await fetch(`${baseUrl}/api/transactions`, {
       headers: { Cookie: otherUser.cookie },
     });

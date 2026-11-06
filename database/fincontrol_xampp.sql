@@ -46,6 +46,9 @@ CREATE TABLE transactions (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     KEY idx_transactions_user_date (user_id, transaction_date),
+    KEY idx_transactions_user_type_date (user_id, type, transaction_date),
+    KEY idx_transactions_user_category_date (user_id, category_id, transaction_date),
+    KEY idx_transactions_user_amount (user_id, amount),
     KEY idx_transactions_category_user (category_id, user_id),
     CONSTRAINT chk_transactions_amount_positive CHECK (amount > 0),
     CONSTRAINT fk_transactions_user

@@ -37,3 +37,7 @@ As FKs compostas entre `(category_id, user_id)` e `categories (id, user_id)` imp
 `database/migrations/001_initial_schema.sql` é a migration versionada da estrutura inicial. O arquivo `fincontrol_xampp.sql` é o instalador conveniente para uma base nova no XAMPP/phpMyAdmin.
 
 Mudanças futuras no schema devem ser adicionadas como novas migrations numeradas.
+
+## Índices da consulta de movimentações
+
+`002_transaction_filter_indexes.sql` adiciona índices compostos para os filtros por usuário, tipo, categoria, período e valor. A busca por descrição usa correspondência parcial parametrizada; caso o volume cresça significativamente, ela deve migrar para um índice `FULLTEXT` com avaliação específica do MariaDB usado em produção.

@@ -30,16 +30,58 @@ function mapTransaction(row) {
   };
 }
 
-async function listByUser(userId) {
+function listConditions(userId, filters) {
+  const conditions = ['t.user_id = ?'];
+  const parameters = [userId];
+  if (filters.type) { conditions.push('t.type = ?'); parameters.push(filters.type); }
+  if (filters.categoryId) { conditions.push('t.category_id = ?'); parameters.push(filters.categoryId); }
+  if (filters.dateFrom) { conditions.push('t.transaction_date >= ?'); parameters.push(filters.dateFrom); }
+  if (filters.dateTo) { conditions.push('t.transaction_date <= ?'); parameters.push(filters.dateTo); }
+  if (filters.minAmount !== null) { conditions.push('t.amount >= ?'); parameters.push(filters.minAmount); }
+  if (filters.maxAmount !== null) { conditions.push('t.amount <= ?'); parameters.push(filters.maxAmount); }
+  if (filters.search) { conditions.push('LOWER(t.description) LIKE LOWER(?)'); parameters.push(`%${filters.search}%`); }
+  return { sql: conditions.join(' AND '), parameters };
+}
+
+async function listByUser(userId, filters) {
+  const { sql, parameters } = listConditions(userId, filters);
+  const sortColumn = filters.sort === 'amount' ? 't.amount' : 't.transaction_date';
+  const sortOrder = filters.order === 'asc' ? 'ASC' : 'DESC';
+  const offset = (filters.page - 1) * filters.pageSize;
+  const [countRows] = await pool.execute(
+    `SELECT COUNT(*) AS total FROM transactions t WHERE ${sql}`,
+    parameters,
+  );
+  const totalItems = Number(countRows[0].total);
   const [rows] = await pool.execute(
     `${TRANSACTION_SELECT}
-     WHERE t.user_id = ?
-     ORDER BY t.transaction_date DESC, t.created_at DESC, t.id DESC
-     LIMIT 100`,
+     WHERE ${sql}
+     ORDER BY ${sortColumn} ${sortOrder}, t.transaction_date ${sortOrder}, t.id ${sortOrder}
+     LIMIT ${filters.pageSize} OFFSET ${offset}`,
+    parameters,
+  );
+  const totalPages = Math.ceil(totalItems / filters.pageSize);
+
+  return {
+    transactions: rows.map(mapTransaction),
+    pagination: {
+      page: filters.page,
+      pageSize: filters.pageSize,
+      totalItems,
+      totalPages,
+      hasPrevious: filters.page > 1,
+      hasNext: filters.page < totalPages,
+    },
+  };
+}
+
+async function listCategoriesByUser(userId) {
+  const [rows] = await pool.execute(
+    `SELECT id, name, type FROM categories
+     WHERE user_id = ? ORDER BY name ASC, id ASC`,
     [userId],
   );
-
-  return rows.map(mapTransaction);
+  return rows.map((row) => ({ id: row.id, name: row.name, type: row.type }));
 }
 
 async function findByUser(userId, transactionId, connection = pool) {
@@ -151,4 +193,4 @@ async function remove(userId, transactionId) {
   }
 }
 
-module.exports = { getByUser, listByUser, remove, update };
+module.exports = { getByUser, listByUser, listCategoriesByUser, remove, update };

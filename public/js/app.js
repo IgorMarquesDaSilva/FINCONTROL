@@ -12,6 +12,10 @@ const expenseForm = document.querySelector('[data-expense-form]');
 const expenseList = document.querySelector('[data-expense-list]');
 const transactionList = document.querySelector('[data-transaction-list]');
 const transactionCount = document.querySelector('[data-transaction-count]');
+const transactionFilterForm = document.querySelector('[data-transaction-filters]');
+const transactionCategorySelect = document.querySelector('[data-transaction-category]');
+const transactionError = document.querySelector('[data-transaction-error]');
+const transactionPagination = document.querySelector('[data-transaction-pagination]');
 const balanceTotal = document.querySelector('[data-balance-total]');
 const balanceHelper = document.querySelector('[data-balance-helper]');
 const monthIncomeTotal = document.querySelector('[data-month-income-total]');
@@ -62,6 +66,8 @@ const deleteAmount = document.querySelector('[data-delete-amount]');
 
 let toastTimer;
 let transactions = [];
+let historyTransactions = [];
+let transactionPage = 1;
 let incomes = [];
 let expenses = [];
 let dashboardRequestId = 0;
@@ -252,7 +258,7 @@ function createMovementAction(label, className, dataName, transaction, visibleLa
   return button;
 }
 
-function renderMovementHistory(displayedTransactions = transactions) {
+function renderMovementHistory(displayedTransactions = historyTransactions) {
   transactionList.replaceChildren();
   transactionCount.textContent = displayedTransactions.length
     ? `${displayedTransactions.length} movimentaç${displayedTransactions.length === 1 ? 'ão' : 'ões'}`
@@ -328,7 +334,6 @@ async function loadDashboardSummary() {
     balanceHelper.textContent = savingsHelper(dashboard);
     incomeHelper.textContent = dashboard.income > 0 ? 'Receitas registradas neste mês' : 'Nenhuma entrada neste mês';
     expenseHelper.textContent = dashboard.expense > 0 ? 'Despesas registradas neste mês' : 'Nenhuma despesa neste mês';
-    renderMovementHistory(dashboard.recentTransactions || []);
   } catch (error) {
     if (requestId !== dashboardRequestId) return;
     dashboardError.textContent = `Não foi possível carregar a visão geral: ${error.message}`;
@@ -339,15 +344,86 @@ async function loadDashboardSummary() {
 function renderAllTransactions() {
   renderIncomes();
   renderExpenses();
-  renderMovementHistory();
+}
+
+function transactionFilterQuery(page = 1) {
+  const data = new FormData(transactionFilterForm);
+  const query = new URLSearchParams({ page: String(page), pageSize: '10' });
+  ['search', 'type', 'categoryId', 'dateFrom', 'dateTo', 'minAmount', 'maxAmount', 'sort', 'order']
+    .forEach((name) => {
+      const value = String(data.get(name) || '').trim();
+      if (value && !(name === 'sort' && value === 'date') && !(name === 'order' && value === 'desc')) {
+        query.set(name, value);
+      }
+    });
+  return query;
+}
+
+function preserveTransactionFilters(query) {
+  const url = new URL(window.location.href);
+  [...url.searchParams.keys()].filter((key) => key.startsWith('tx_')).forEach((key) => url.searchParams.delete(key));
+  query.forEach((value, key) => {
+    if (key !== 'pageSize' && !(key === 'page' && value === '1')) url.searchParams.set(`tx_${key}`, value);
+  });
+  window.history.replaceState({}, '', url);
+}
+
+function restoreTransactionFilters() {
+  const params = new URLSearchParams(window.location.search);
+  params.forEach((value, key) => {
+    if (!key.startsWith('tx_')) return;
+    const name = key.slice(3);
+    const field = transactionFilterForm.elements.namedItem(name);
+    if (name === 'categoryId') transactionCategorySelect.dataset.restoreValue = value;
+    else if (field) field.value = value;
+  });
+  transactionPage = Number(params.get('tx_page')) || 1;
+}
+
+function renderTransactionPagination(pagination) {
+  transactionPage = pagination.page;
+  transactionPagination.hidden = pagination.totalPages <= 1;
+  document.querySelector('[data-transaction-page]').textContent = pagination.totalPages
+    ? `Página ${pagination.page} de ${pagination.totalPages}`
+    : 'Nenhum resultado';
+  document.querySelector('[data-transaction-previous]').disabled = !pagination.hasPrevious;
+  document.querySelector('[data-transaction-next]').disabled = !pagination.hasNext;
+}
+
+async function loadTransactionCategories() {
+  const payload = await api('/api/transactions/categories');
+  const selected = transactionCategorySelect.value || transactionCategorySelect.dataset.restoreValue || '';
+  transactionCategorySelect.replaceChildren(new Option('Todas', ''));
+  (payload.categories || []).forEach((category) => {
+    transactionCategorySelect.append(new Option(category.name, category.id));
+  });
+  transactionCategorySelect.value = selected;
+  delete transactionCategorySelect.dataset.restoreValue;
+}
+
+async function loadTransactionHistory(page = transactionPage) {
+  const query = transactionFilterQuery(page);
+  transactionError.hidden = true;
+  try {
+    const payload = await api(`/api/transactions?${query.toString()}`);
+    historyTransactions = payload.transactions || [];
+    renderMovementHistory();
+    renderTransactionPagination(payload.pagination);
+    preserveTransactionFilters(query);
+  } catch (error) {
+    transactionError.textContent = error.message;
+    transactionError.hidden = false;
+  }
 }
 
 async function loadFinancialData() {
   try {
-    const payload = await api('/api/transactions');
-    replaceTransactions(payload.transactions || []);
+    const [incomePayload, expensePayload] = await Promise.all([
+      api('/api/incomes'), api('/api/expenses'), loadTransactionCategories(),
+    ]);
+    replaceTransactions([...(incomePayload.incomes || []), ...(expensePayload.expenses || [])]);
     renderAllTransactions();
-    await Promise.all([loadDashboardSummary(), loadMonthlyReport()]);
+    await Promise.all([loadDashboardSummary(), loadMonthlyReport(), loadTransactionHistory()]);
   } catch (error) {
     showToast(error.message, 'error');
   }
@@ -963,6 +1039,7 @@ function showDashboard(user) {
   reportMonthInput.value ||= currentMonthKey();
   dashboardMonthInput.value ||= currentMonthKey();
   setDefaultTransactionDates();
+  restoreTransactionFilters();
   void loadFinancialData();
   void loadBudgetPlanning();
   void loadGoals();
@@ -1066,6 +1143,7 @@ incomeForm.addEventListener('submit', async (event) => {
     setDefaultTransactionDates();
     renderAllTransactions();
     showToast('Receita cadastrada com sucesso.');
+    void loadTransactionCategories().then(() => loadTransactionHistory(1));
     void loadDashboardSummary();
     void loadMonthlyReport();
     void loadBudgetPlanning();
@@ -1099,6 +1177,7 @@ expenseForm.addEventListener('submit', async (event) => {
     setDefaultTransactionDates();
     renderAllTransactions();
     showToast('Despesa cadastrada com sucesso.');
+    void loadTransactionCategories().then(() => loadTransactionHistory(1));
     void loadDashboardSummary();
     void loadMonthlyReport();
     void loadBudgetPlanning();
@@ -1230,6 +1309,7 @@ editForm.addEventListener('submit', async (event) => {
 
     closeTransactionEditor();
     showToast(payload.message);
+    void loadTransactionCategories().then(() => loadTransactionHistory());
     void loadDashboardSummary();
     void loadMonthlyReport();
     void loadBudgetPlanning();
@@ -1270,6 +1350,7 @@ deleteForm.addEventListener('submit', async (event) => {
 
     closeTransactionDeletion();
     showToast(payload.message);
+    void loadTransactionHistory();
     void loadDashboardSummary();
     void loadMonthlyReport();
     void loadBudgetPlanning();
@@ -1299,6 +1380,8 @@ document.querySelector('[data-logout]').addEventListener('click', async () => {
     // A interface encerra a sessão mesmo se a resposta for interrompida.
   }
   replaceTransactions([]);
+  historyTransactions = [];
+  transactionPage = 1;
   budgetCategories = [];
   monthlyBudgets = [];
   goals = [];
@@ -1306,6 +1389,8 @@ document.querySelector('[data-logout]').addEventListener('click', async () => {
   goalsList.replaceChildren();
   resetBudgetForm();
   renderAllTransactions();
+  renderMovementHistory();
+  transactionPagination.hidden = true;
   showAuth('login');
   showToast('Você saiu da sua conta.');
 });
@@ -1335,6 +1420,21 @@ document.querySelectorAll('[data-focus-expense-form]').forEach((button) => {
 });
 document.querySelectorAll('[data-demo-action]').forEach((button) => {
   button.addEventListener('click', () => showToast('Essa função entra na próxima etapa do projeto.'));
+});
+
+transactionFilterForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  void loadTransactionHistory(1);
+});
+document.querySelector('[data-clear-transaction-filters]').addEventListener('click', () => {
+  transactionFilterForm.reset();
+  void loadTransactionHistory(1);
+});
+document.querySelector('[data-transaction-previous]').addEventListener('click', () => {
+  if (transactionPage > 1) void loadTransactionHistory(transactionPage - 1);
+});
+document.querySelector('[data-transaction-next]').addEventListener('click', () => {
+  void loadTransactionHistory(transactionPage + 1);
 });
 
 goalForm.addEventListener('submit', async (event) => {

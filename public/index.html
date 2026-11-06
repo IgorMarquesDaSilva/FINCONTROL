@@ -239,6 +239,19 @@
               </div>
               <small data-transaction-count></small>
             </header>
+            <form class="movement-filters" data-transaction-filters>
+              <div class="movement-filters__search"><label for="transaction-search">Buscar descrição</label><input id="transaction-search" name="search" type="search" maxlength="180" placeholder="Ex.: mercado, salário"></div>
+              <div><label for="transaction-type">Tipo</label><select id="transaction-type" name="type"><option value="">Todos</option><option value="INCOME">Receitas</option><option value="EXPENSE">Despesas</option></select></div>
+              <div><label for="transaction-category">Categoria</label><select id="transaction-category" name="categoryId" data-transaction-category><option value="">Todas</option></select></div>
+              <div><label for="transaction-from">De</label><input id="transaction-from" name="dateFrom" type="date"></div>
+              <div><label for="transaction-to">Até</label><input id="transaction-to" name="dateTo" type="date"></div>
+              <div><label for="transaction-min">Valor mínimo</label><input id="transaction-min" name="minAmount" type="number" min="0" step="0.01" inputmode="decimal"></div>
+              <div><label for="transaction-max">Valor máximo</label><input id="transaction-max" name="maxAmount" type="number" min="0" step="0.01" inputmode="decimal"></div>
+              <div><label for="transaction-sort">Ordenar</label><select id="transaction-sort" name="sort"><option value="date">Data</option><option value="amount">Valor</option></select></div>
+              <div><label for="transaction-order">Direção</label><select id="transaction-order" name="order"><option value="desc">Maior/recente</option><option value="asc">Menor/antigo</option></select></div>
+              <div class="movement-filters__actions"><button type="submit">Aplicar filtros</button><button type="button" data-clear-transaction-filters>Limpar</button></div>
+            </form>
+            <p class="movement-history__error" data-transaction-error role="alert" hidden></p>
             <div class="movement-history__list" data-transaction-list aria-live="polite">
               <div class="movement-history__empty">
                 <span aria-hidden="true">⇅</span>
@@ -246,6 +259,7 @@
                 <p>Registre uma receita ou despesa para começar seu histórico.</p>
               </div>
             </div>
+            <nav class="movement-pagination" data-transaction-pagination aria-label="Paginação das movimentações" hidden><button type="button" data-transaction-previous>← Anterior</button><span data-transaction-page></span><button type="button" data-transaction-next>Próxima →</button></nav>
           </section>
 
           <section class="report-section" aria-labelledby="monthly-report-title" data-monthly-report aria-busy="true">
