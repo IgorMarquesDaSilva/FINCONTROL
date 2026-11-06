@@ -130,6 +130,10 @@ FINCONTROL/
 | `POST` | `/api/expenses` | Cadastrar uma despesa |
 | `GET` | `/api/transactions` | Listar receitas e despesas em ordem cronológica |
 | `GET` | `/api/dashboard?month=AAAA-MM` | Obter resumo e movimentações recentes do mês |
+| `GET/POST` | `/api/goals` | Listar e criar metas financeiras |
+| `GET/PUT/DELETE` | `/api/goals/:id` | Consultar, editar ou excluir uma meta |
+| `POST` | `/api/goals/:id/contributions` | Registrar aporte em uma meta ativa |
+| `PATCH` | `/api/goals/:id/status` | Ativar, concluir ou cancelar uma meta |
 | `GET` | `/api/transactions/:id` | Carregar uma movimentação do usuário para edição |
 | `PUT` | `/api/transactions/:id` | Atualizar valor, categoria, descrição e data |
 | `DELETE` | `/api/transactions/:id` | Excluir uma movimentação do usuário |
