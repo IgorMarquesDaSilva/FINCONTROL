@@ -112,6 +112,21 @@ test('cadastra, edita e exclui movimentacoes sem permitir acesso entre usuarios'
     assert.equal(updatedExpense.description, 'Passe mensal');
     assert.equal(updatedExpense.category.name, 'Mobilidade');
 
+    const movementList = await fetch(`${baseUrl}/api/transactions`, {
+      headers: { Cookie: owner.cookie },
+    });
+    assert.equal(movementList.status, 200);
+    const movements = (await movementList.json()).transactions;
+    assert.equal(movements.length, 2);
+    assert.deepEqual(movements.map((transaction) => transaction.type), ['EXPENSE', 'INCOME']);
+    assert.deepEqual(movements.map((transaction) => transaction.transactionDate), ['2026-10-04', '2026-10-02']);
+
+    const otherUserMovements = await fetch(`${baseUrl}/api/transactions`, {
+      headers: { Cookie: otherUser.cookie },
+    });
+    assert.equal(otherUserMovements.status, 200);
+    assert.deepEqual((await otherUserMovements.json()).transactions, []);
+
     const forbiddenRead = await fetch(`${baseUrl}/api/transactions/${income.id}`, {
       headers: { Cookie: otherUser.cookie },
     });
@@ -171,6 +186,12 @@ test('cadastra, edita e exclui movimentacoes sem permitir acesso entre usuarios'
       headers: { Cookie: owner.cookie },
     });
     assert.equal(repeatedDelete.status, 404);
+
+    const emptyMovements = await fetch(`${baseUrl}/api/transactions`, {
+      headers: { Cookie: owner.cookie },
+    });
+    assert.equal(emptyMovements.status, 200);
+    assert.deepEqual((await emptyMovements.json()).transactions, []);
   } finally {
     try {
       if (testUsers.length) {

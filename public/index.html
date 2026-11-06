@@ -179,6 +179,7 @@
         </div>
         <nav class="sidebar-nav" aria-label="Menu principal">
           <a class="sidebar-link is-active" href="#visao-geral"><span>⌂</span> Visão geral</a>
+          <a class="sidebar-link" href="#movimentacoes"><span>⇅</span> Movimentações</a>
           <a class="sidebar-link" href="#receitas"><span>↕</span> Receitas</a>
           <a class="sidebar-link" href="#despesas"><span>↘</span> Despesas</a>
           <a class="sidebar-link" href="#planejamento"><span>◎</span> Planejamento</a>
@@ -224,6 +225,24 @@
             </article>
             <article class="metric-card"><span>Entradas no mês</span><strong data-month-income-total>R$ 0,00</strong><small class="positive" data-income-helper>Pronto para crescer</small></article>
             <article class="metric-card"><span>Saídas no mês</span><strong data-month-expense-total>R$ 0,00</strong><small class="expense" data-expense-helper>Nenhuma despesa neste mês</small></article>
+          </section>
+
+          <section class="movement-history" id="movimentacoes" aria-labelledby="movement-history-title">
+            <header class="movement-history__heading">
+              <div>
+                <span class="eyebrow"><span></span> Histórico financeiro</span>
+                <h2 id="movement-history-title">Todas as movimentações</h2>
+                <p>Receitas e despesas reunidas em ordem cronológica.</p>
+              </div>
+              <small data-transaction-count></small>
+            </header>
+            <div class="movement-history__list" data-transaction-list aria-live="polite">
+              <div class="movement-history__empty">
+                <span aria-hidden="true">⇅</span>
+                <h3>Nenhuma movimentação cadastrada</h3>
+                <p>Registre uma receita ou despesa para começar seu histórico.</p>
+              </div>
+            </div>
           </section>
 
           <section class="report-section" aria-labelledby="monthly-report-title" data-monthly-report aria-busy="true">

@@ -28,6 +28,15 @@ function ensureValid(validation) {
 
 router.use(authenticate);
 
+router.get('/', async (request, response, next) => {
+  try {
+    const transactions = await transactionService.listByUser(request.user.id);
+    response.json({ transactions });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/:id', async (request, response, next) => {
   try {
     const transactionId = parseTransactionId(request.params.id);

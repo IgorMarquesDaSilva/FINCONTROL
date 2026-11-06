@@ -4,6 +4,7 @@ const AppError = require('../errors/AppError');
 function mapIncome(row) {
   return {
     id: row.id,
+    type: 'INCOME',
     description: row.description,
     amount: Number(row.amount),
     transactionDate: row.transaction_date,

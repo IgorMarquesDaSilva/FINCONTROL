@@ -30,6 +30,18 @@ function mapTransaction(row) {
   };
 }
 
+async function listByUser(userId) {
+  const [rows] = await pool.execute(
+    `${TRANSACTION_SELECT}
+     WHERE t.user_id = ?
+     ORDER BY t.transaction_date DESC, t.created_at DESC, t.id DESC
+     LIMIT 100`,
+    [userId],
+  );
+
+  return rows.map(mapTransaction);
+}
+
 async function findByUser(userId, transactionId, connection = pool) {
   const [rows] = await connection.execute(
     `${TRANSACTION_SELECT}
@@ -139,4 +151,4 @@ async function remove(userId, transactionId) {
   }
 }
 
-module.exports = { getByUser, remove, update };
+module.exports = { getByUser, listByUser, remove, update };

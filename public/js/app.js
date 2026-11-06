@@ -10,6 +10,8 @@ const incomeForm = document.querySelector('[data-income-form]');
 const incomeList = document.querySelector('[data-income-list]');
 const expenseForm = document.querySelector('[data-expense-form]');
 const expenseList = document.querySelector('[data-expense-list]');
+const transactionList = document.querySelector('[data-transaction-list]');
+const transactionCount = document.querySelector('[data-transaction-count]');
 const balanceTotal = document.querySelector('[data-balance-total]');
 const balanceHelper = document.querySelector('[data-balance-helper]');
 const monthIncomeTotal = document.querySelector('[data-month-income-total]');
@@ -47,6 +49,7 @@ const deleteDate = document.querySelector('[data-delete-date]');
 const deleteAmount = document.querySelector('[data-delete-amount]');
 
 let toastTimer;
+let transactions = [];
 let incomes = [];
 let expenses = [];
 let reportRequestId = 0;
@@ -213,16 +216,91 @@ function renderExpenses() {
   renderTransactions(expenseList, expenses, 'EXPENSE');
 }
 
+function transactionSortValue(transaction) {
+  return `${transaction.transactionDate || ''}|${transaction.createdAt || ''}|${String(transaction.id).padStart(20, '0')}`;
+}
+
+function replaceTransactions(nextTransactions) {
+  transactions = [...nextTransactions].sort((left, right) => (
+    transactionSortValue(right).localeCompare(transactionSortValue(left))
+  ));
+  incomes = transactions.filter((transaction) => transaction.type === 'INCOME');
+  expenses = transactions.filter((transaction) => transaction.type === 'EXPENSE');
+}
+
+function createMovementAction(label, className, dataName, transaction, visibleLabel = label) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = className;
+  button.dataset[dataName] = transaction.id;
+  button.textContent = visibleLabel;
+  button.setAttribute('aria-label', `${label} ${transaction.type === 'EXPENSE' ? 'despesa' : 'receita'} ${transaction.description || 'sem descrição'}`);
+  return button;
+}
+
+function renderMovementHistory() {
+  transactionList.replaceChildren();
+  transactionCount.textContent = transactions.length
+    ? `${transactions.length} movimentaç${transactions.length === 1 ? 'ão' : 'ões'}`
+    : '';
+
+  if (!transactions.length) {
+    const empty = document.createElement('div');
+    empty.className = 'movement-history__empty';
+    empty.innerHTML = '<span aria-hidden="true">⇅</span><h3>Nenhuma movimentação cadastrada</h3><p>Registre uma receita ou despesa para começar seu histórico.</p>';
+    transactionList.append(empty);
+    return;
+  }
+
+  transactions.forEach((transaction) => {
+    const isExpense = transaction.type === 'EXPENSE';
+    const row = document.createElement('article');
+    row.className = `movement-row${isExpense ? ' movement-row--expense' : ''}`;
+
+    const main = document.createElement('div');
+    main.className = 'movement-row__main';
+    const icon = document.createElement('span');
+    icon.className = 'movement-row__icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = isExpense ? '↘' : '↗';
+    const details = document.createElement('div');
+    details.className = 'movement-row__details';
+    const description = document.createElement('strong');
+    description.textContent = transaction.description || 'Sem descrição';
+    const meta = document.createElement('small');
+    const type = document.createElement('span');
+    type.className = 'movement-row__type';
+    type.textContent = isExpense ? 'Despesa' : 'Receita';
+    meta.append(type, `${transaction.category?.name || 'Sem categoria'} · ${formatDate(transaction.transactionDate)}`);
+    details.append(description, meta);
+    main.append(icon, details);
+
+    const amount = document.createElement('strong');
+    amount.className = 'movement-row__amount';
+    amount.textContent = `${isExpense ? '- ' : '+ '}${formatCurrency(transaction.amount)}`;
+
+    const actions = document.createElement('div');
+    actions.className = 'movement-row__actions';
+    actions.append(
+      createMovementAction('Editar', 'income-item__edit', 'editTransaction', transaction),
+      createMovementAction('Excluir', 'income-item__delete', 'deleteTransaction', transaction, '×'),
+    );
+    row.append(main, amount, actions);
+    transactionList.append(row);
+  });
+}
+
+function renderAllTransactions() {
+  renderIncomes();
+  renderExpenses();
+  renderMovementHistory();
+}
+
 async function loadFinancialData() {
   try {
-    const [incomePayload, expensePayload] = await Promise.all([
-      api('/api/incomes'),
-      api('/api/expenses'),
-    ]);
-    incomes = incomePayload.incomes || [];
-    expenses = expensePayload.expenses || [];
-    renderIncomes();
-    renderExpenses();
+    const payload = await api('/api/transactions');
+    replaceTransactions(payload.transactions || []);
+    renderAllTransactions();
     await loadMonthlyReport();
   } catch (error) {
     showToast(error.message, 'error');
@@ -801,10 +879,10 @@ incomeForm.addEventListener('submit', async (event) => {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    incomes = [payload.income, ...incomes.filter((income) => income.id !== payload.income.id)].slice(0, 20);
+    replaceTransactions([payload.income, ...transactions.filter((transaction) => transaction.id !== payload.income.id)]);
     incomeForm.reset();
     setDefaultTransactionDates();
-    renderIncomes();
+    renderAllTransactions();
     showToast('Receita cadastrada com sucesso.');
     void loadMonthlyReport();
     void loadBudgetPlanning();
@@ -833,10 +911,10 @@ expenseForm.addEventListener('submit', async (event) => {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    expenses = [payload.expense, ...expenses.filter((expense) => expense.id !== payload.expense.id)].slice(0, 20);
+    replaceTransactions([payload.expense, ...transactions.filter((transaction) => transaction.id !== payload.expense.id)]);
     expenseForm.reset();
     setDefaultTransactionDates();
-    renderExpenses();
+    renderAllTransactions();
     showToast('Despesa cadastrada com sucesso.');
     void loadMonthlyReport();
     void loadBudgetPlanning();
@@ -927,7 +1005,7 @@ budgetDeleteDialog.addEventListener('click', (event) => {
 
 budgetDeleteDialog.addEventListener('close', () => budgetDeleteForm.reset());
 
-[incomeList, expenseList].forEach((listElement) => {
+[incomeList, expenseList, transactionList].forEach((listElement) => {
   listElement.addEventListener('click', (event) => {
     const editButton = event.target.closest('[data-edit-transaction]');
     const deleteButton = event.target.closest('[data-delete-transaction]');
@@ -961,17 +1039,10 @@ editForm.addEventListener('submit', async (event) => {
       body: JSON.stringify(data),
     });
 
-    if (payload.transaction.type === 'INCOME') {
-      incomes = incomes.map((income) => (
-        Number(income.id) === Number(payload.transaction.id) ? payload.transaction : income
-      ));
-      renderIncomes();
-    } else {
-      expenses = expenses.map((expense) => (
-        Number(expense.id) === Number(payload.transaction.id) ? payload.transaction : expense
-      ));
-      renderExpenses();
-    }
+    replaceTransactions(transactions.map((transaction) => (
+      Number(transaction.id) === Number(payload.transaction.id) ? payload.transaction : transaction
+    )));
+    renderAllTransactions();
 
     closeTransactionEditor();
     showToast(payload.message);
@@ -1004,19 +1075,13 @@ editDialog.addEventListener('close', () => {
 deleteForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const transactionId = deleteForm.elements.namedItem('transactionId').value;
-  const transactionType = deleteForm.elements.namedItem('transactionType').value;
 
   try {
     setLoading(deleteForm, true);
     const payload = await api(`/api/transactions/${transactionId}`, { method: 'DELETE' });
 
-    if (transactionType === 'EXPENSE') {
-      expenses = expenses.filter((expense) => Number(expense.id) !== Number(transactionId));
-      renderExpenses();
-    } else {
-      incomes = incomes.filter((income) => Number(income.id) !== Number(transactionId));
-      renderIncomes();
-    }
+    replaceTransactions(transactions.filter((transaction) => Number(transaction.id) !== Number(transactionId)));
+    renderAllTransactions();
 
     closeTransactionDeletion();
     showToast(payload.message);
@@ -1047,14 +1112,12 @@ document.querySelector('[data-logout]').addEventListener('click', async () => {
   } catch (_error) {
     // A interface encerra a sessão mesmo se a resposta for interrompida.
   }
-  incomes = [];
-  expenses = [];
+  replaceTransactions([]);
   budgetCategories = [];
   monthlyBudgets = [];
   budgetList.replaceChildren();
   resetBudgetForm();
-  renderIncomes();
-  renderExpenses();
+  renderAllTransactions();
   showAuth('login');
   showToast('Você saiu da sua conta.');
 });
