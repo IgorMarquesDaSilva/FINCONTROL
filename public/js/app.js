@@ -126,28 +126,7 @@ const dashboardPages = [
 ];
 
 function addLearningContent(container) {
-  const cards = [
-    ['Comece pelo essencial', 'Anote o que entra e o que sai. Um registro simples já ajuda a entender seus hábitos e tomar decisões com mais clareza.'],
-    ['Planeje com flexibilidade', 'Use limites mensais como referência. Se um gasto mudar, ajuste o plano sem culpa e escolha o próximo passo possível.'],
-    ['Construa uma reserva aos poucos', 'Guardar um valor pequeno com regularidade pode ajudar a lidar com despesas inesperadas. Escolha um ritmo que caiba no seu orçamento.'],
-  ];
-  const grid = document.createElement('div');
-  grid.className = 'learning-grid';
-  cards.forEach(([title, description], index) => {
-    const card = document.createElement('article');
-    card.className = 'learning-card';
-    const number = document.createElement('span');
-    number.className = 'learning-card__number';
-    number.setAttribute('aria-hidden', 'true');
-    number.textContent = `0${index + 1}`;
-    const heading = document.createElement('h2');
-    heading.textContent = title;
-    const text = document.createElement('p');
-    text.textContent = description;
-    card.append(number, heading, text);
-    grid.append(card);
-  });
-  container.append(grid);
+  void window.FincontrolEducation.mount(container);
 }
 
 function initializeDashboardPages() {
