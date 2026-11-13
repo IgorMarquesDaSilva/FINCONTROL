@@ -280,7 +280,7 @@
                 <h2 id="movement-history-title">Todas as movimentações</h2>
                 <p>Receitas e despesas reunidas em ordem cronológica.</p>
               </div>
-              <small data-transaction-count></small>
+              <div class="export-actions"><small data-transaction-count></small><button class="secondary-button export-button" type="button" data-export-csv>Exportar CSV</button></div>
             </header>
             <form class="movement-filters" data-transaction-filters>
               <div class="movement-filters__search"><label for="transaction-search">Buscar descrição</label><input id="transaction-search" name="search" type="search" maxlength="180" placeholder="Ex.: mercado, salário"></div>
@@ -315,6 +315,7 @@
               <div class="report-period">
                 <label for="report-month">Mês do relatório</label>
                 <input id="report-month" type="month" data-report-month aria-controls="report-content">
+                <button class="secondary-button export-button" type="button" data-export-pdf>Baixar PDF</button>
               </div>
             </div>
 

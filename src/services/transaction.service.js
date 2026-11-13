@@ -77,6 +77,22 @@ async function listByUser(userId, filters) {
   };
 }
 
+async function exportByUser(userId, filters) {
+  const { sql, parameters } = listConditions(userId, filters);
+  const sortColumn = filters.sort === 'amount' ? 't.amount' : 't.transaction_date';
+  const sortOrder = filters.order === 'asc' ? 'ASC' : 'DESC';
+  const [rows] = await pool.execute(
+    `${TRANSACTION_SELECT} WHERE ${sql}
+     ORDER BY ${sortColumn} ${sortOrder}, t.transaction_date ${sortOrder}, t.id ${sortOrder}
+     LIMIT 10001`,
+    parameters,
+  );
+  if (rows.length > 10000) {
+    throw new AppError('Há mais de 10 mil registros. Reduza o período ou aplique filtros para exportar.', 413, 'export_too_large');
+  }
+  return rows.map(mapTransaction);
+}
+
 async function listCategoriesByUser(userId) {
   const [rows] = await pool.execute(
     `SELECT id, name, type FROM categories
@@ -195,4 +211,4 @@ async function remove(userId, transactionId) {
   }
 }
 
-module.exports = { getByUser, listByUser, listCategoriesByUser, remove, update };
+module.exports = { getByUser, listByUser, exportByUser, listCategoriesByUser, remove, update };

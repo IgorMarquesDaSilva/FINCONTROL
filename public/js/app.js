@@ -247,6 +247,46 @@ async function api(path, options = {}) {
   return payload;
 }
 
+async function downloadExport(path, filename) {
+  const response = await fetch(path, { credentials: 'same-origin' });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload.error?.message || 'Não foi possível gerar o arquivo.');
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+document.querySelector('[data-export-csv]').addEventListener('click', async (event) => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  try {
+    const params = new URLSearchParams([...new FormData(transactionFilterForm)]
+      .filter(([, value]) => String(value).trim()));
+    await downloadExport(`/api/exports/transactions.csv?${params}`, 'fincontrol-movimentacoes.csv');
+    showToast('CSV pronto para download.');
+  } catch (error) { showToast(error.message, 'error'); }
+  finally { button.disabled = false; }
+});
+
+document.querySelector('[data-export-pdf]').addEventListener('click', async (event) => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  try {
+    const month = reportMonthInput.value || currentMonthKey();
+    await downloadExport(`/api/exports/monthly.pdf?month=${encodeURIComponent(month)}`, `fincontrol-${month}.pdf`);
+    showToast('PDF pronto para download.');
+  } catch (error) { showToast(error.message, 'error'); }
+  finally { button.disabled = false; }
+});
+
 function showToast(message, type = 'success') {
   clearTimeout(toastTimer);
   toast.textContent = message;

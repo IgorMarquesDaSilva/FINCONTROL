@@ -546,6 +546,9 @@ select { font: inherit; }
 .notifications-toggle input { accent-color: #008a65; }
 .notifications-mute { display: grid; gap: .4rem; margin: 1.25rem 0; font-size: .875rem; font-weight: 700; }
 .notifications-mute select { min-height: 2.75rem; padding: 0 .75rem; border: 1px solid #cfdddd; border-radius: .625rem; background: #fff; font: inherit; }
+.export-actions { display: flex; align-items: center; gap: .875rem; }
+.export-button { min-height: 2.5rem; padding: .5rem .8rem; white-space: nowrap; font-size: .8125rem; }
+.report-period .export-button { margin-top: .5rem; }
 
 @media (max-width: 61.25rem) {
   .recurrences-workspace { grid-template-columns: 1fr; }
@@ -586,6 +589,7 @@ select { font: inherit; }
 }
 
 @media (max-width: 33.75rem) {
+  .export-actions { align-items: flex-start; flex-direction: column; }
   .recurrences-panel { padding: 1.125rem; }
   .recurrences-form-row { grid-template-columns: 1fr; gap: 0; }
   .education-toolbar { flex-direction: column; align-items: stretch; }
