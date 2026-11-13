@@ -58,6 +58,16 @@ const budgetCancelButton = document.querySelector('[data-budget-cancel]');
 const budgetDeleteDialog = document.querySelector('[data-budget-delete-dialog]');
 const budgetDeleteForm = document.querySelector('[data-budget-delete-form]');
 const goalsSection = document.querySelector('[data-goals-section]');
+const simulatorForm = document.querySelector('[data-simulator-form]');
+const simulatorError = document.querySelector('[data-simulator-error]');
+const simulatorEmpty = document.querySelector('[data-simulator-empty]');
+const simulatorResults = document.querySelector('[data-simulation-results]');
+const simulatorChart = document.querySelector('[data-simulator-chart]');
+const simulatorChartDescription = document.querySelector('[data-simulator-chart-description]');
+const simulatorTableBody = document.querySelector('[data-simulator-table-body]');
+const simulatorConversion = document.querySelector('[data-simulator-conversion]');
+const simulatorLimitMessage = document.querySelector('[data-simulator-limit-message]');
+const useSimulationButton = document.querySelector('[data-use-simulation]');
 const goalsList = document.querySelector('[data-goals-list]');
 const goalsLoading = document.querySelector('[data-goals-loading]');
 const goalsError = document.querySelector('[data-goals-error]');
@@ -94,6 +104,12 @@ let budgetRequestId = 0;
 let budgetCategories = [];
 let monthlyBudgets = [];
 let goals = [];
+let currentSimulation = null;
+
+const simulatorFinal = document.querySelector('[data-simulator-final]');
+const simulatorContributions = document.querySelector('[data-simulator-contributions]');
+const simulatorEarnings = document.querySelector('[data-simulator-earnings]');
+const simulatorStatus = document.querySelector('[data-simulator-status]');
 
 const dashboardPages = [
   { route: 'visao-geral', title: 'Visão geral', description: 'Seu resumo financeiro, insights e relatório mensal.', selectors: ['.welcome-row', '.metric-grid', '[data-dashboard-error]', '[data-insights-section]', '[data-monthly-report]'] },
@@ -101,7 +117,7 @@ const dashboardPages = [
   { route: 'receitas', title: 'Receitas', description: 'Registre e acompanhe o dinheiro que entra.', selectors: ['.income-card'] },
   { route: 'despesas', title: 'Despesas', description: 'Registre e acompanhe o dinheiro que sai.', selectors: ['.expense-card'] },
   { route: 'planejamento', title: 'Planejamento', description: 'Defina limites mensais e acompanhe seus gastos.', selectors: ['[data-budget-planning]'] },
-  { route: 'metas', title: 'Metas', description: 'Organize seus objetivos e acompanhe seu progresso.', selectors: ['[data-goals-section]'] },
+  { route: 'metas', title: 'Metas', description: 'Organize seus objetivos, simule aportes e acompanhe seu progresso.', selectors: ['[data-goal-simulator]', '[data-goals-section]'] },
   { route: 'aprenda', title: 'Aprenda', description: 'Conceitos financeiros explicados de forma simples.' },
 ];
 
@@ -252,6 +268,93 @@ function showToast(message, type = 'success') {
 
 function formatCurrency(value) {
   return currencyFormatter.format(Number(value) || 0);
+}
+
+function renderSimulationChart(simulation) {
+  const namespace = 'http://www.w3.org/2000/svg';
+  const width = 640;
+  const height = 260;
+  const padding = { top: 16, right: 16, bottom: 32, left: 76 };
+  const rows = simulation.timeline;
+  const maxValue = Math.max(1, ...rows.map((row) => row.balance));
+  const x = (index) => padding.left + (index / Math.max(1, rows.length - 1)) * (width - padding.left - padding.right);
+  const y = (value) => height - padding.bottom - (value / maxValue) * (height - padding.top - padding.bottom);
+  simulatorChart.replaceChildren();
+  const add = (tag, attrs) => {
+    const element = document.createElementNS(namespace, tag);
+    Object.entries(attrs).forEach(([key, value]) => element.setAttribute(key, value));
+    simulatorChart.append(element);
+    return element;
+  };
+  for (let step = 0; step <= 4; step += 1) {
+    const value = maxValue * step / 4;
+    const gridY = y(value);
+    add('line', { x1: padding.left, y1: gridY, x2: width - padding.right, y2: gridY, class: 'simulator-chart__grid' });
+    const label = add('text', { x: padding.left - 8, y: gridY + 4, 'text-anchor': 'end', class: 'simulator-chart__label' });
+    label.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 }).format(value);
+  }
+  const line = (key, className) => add('polyline', {
+    points: rows.map((row, index) => `${x(index)},${y(row[key])}`).join(' '),
+    class: className,
+  });
+  line('contributions', 'simulator-chart__series simulator-chart__series--contributions');
+  line('balance', 'simulator-chart__series simulator-chart__series--balance');
+  [0, rows.length - 1].forEach((index) => {
+    const label = add('text', { x: x(index), y: height - 8, 'text-anchor': index ? 'end' : 'start', class: 'simulator-chart__label' });
+    label.textContent = `Mês ${rows[index].month}`;
+  });
+  simulatorChartDescription.textContent = `No mês ${simulation.durationMonths}, o saldo estimado é ${formatCurrency(simulation.finalBalance)} e o total aportado é ${formatCurrency(simulation.totalContributions)}. O rendimento estimado é ${formatCurrency(simulation.totalEarnings)}. A evolução completa está na tabela a seguir.`;
+}
+
+function renderSimulation(simulation, input) {
+  currentSimulation = { ...simulation, input };
+  simulatorEmpty.hidden = true;
+  simulatorResults.hidden = false;
+  simulatorError.hidden = true;
+  simulatorFinal.textContent = formatCurrency(simulation.finalBalance);
+  simulatorContributions.textContent = formatCurrency(simulation.totalContributions);
+  simulatorEarnings.textContent = formatCurrency(simulation.totalEarnings);
+  const rateLabel = input.ratePeriod === 'annual' ? 'anual efetiva' : 'mensal';
+  const monthlyRate = window.FincontrolCompoundInterest.getMonthlyRate(Number(input.ratePercent), input.ratePeriod);
+  simulatorStatus.textContent = `Projeção para ${simulation.durationMonths} meses com taxa de ${input.ratePercent}% ${rateLabel} (equivalente a ${(monthlyRate * 100).toLocaleString('pt-BR', { maximumFractionDigits: 4 })}% ao mês).`;
+  simulatorTableBody.replaceChildren();
+  simulation.timeline.forEach((row) => {
+    const tr = document.createElement('tr');
+    [String(row.month), formatCurrency(row.contributions), formatCurrency(row.earnings), formatCurrency(row.balance)].forEach((value) => {
+      const cell = document.createElement('td');
+      cell.textContent = value;
+      tr.append(cell);
+    });
+    simulatorTableBody.append(tr);
+  });
+  renderSimulationChart(simulation);
+  const withinLimit = simulation.finalBalance >= 0.01 && simulation.finalBalance <= 9_999_999_999_999.99;
+  useSimulationButton.hidden = !withinLimit;
+  simulatorLimitMessage.hidden = withinLimit;
+  simulatorLimitMessage.textContent = withinLimit ? '' : 'Este resultado está fora do limite aceito para criação de uma meta.';
+  simulatorConversion.textContent = withinLimit
+    ? 'Você pode preencher o formulário de metas com esta projeção e revisar os dados antes de salvar.'
+    : '';
+}
+
+function useSimulationForGoal() {
+  if (!currentSimulation) return;
+  const { input, finalBalance } = currentSimulation;
+  resetGoalForm();
+  const goalName = String(new FormData(simulatorForm).get('goalName') || '').trim();
+  goalForm.elements.namedItem('name').value = goalName || 'Minha meta simulada';
+  goalForm.elements.namedItem('targetAmount').value = finalBalance.toFixed(2);
+  goalForm.elements.namedItem('currentAmount').value = Number(input.initialAmount).toFixed(2);
+  const deadline = new Date();
+  deadline.setDate(1);
+  deadline.setMonth(deadline.getMonth() + Number(input.durationMonths) + 1);
+  deadline.setDate(0);
+  goalForm.elements.namedItem('deadline').value = `${deadline.getFullYear()}-${String(deadline.getMonth() + 1).padStart(2, '0')}-${String(deadline.getDate()).padStart(2, '0')}`;
+  const ratePeriod = input.ratePeriod === 'annual' ? 'anual efetiva' : 'mensal';
+  goalForm.elements.namedItem('description').value = `Projeção de ${input.durationMonths} meses, aporte mensal de ${formatCurrency(input.monthlyContribution)}, taxa ${input.ratePercent}% ${ratePeriod}. Rendimento estimado, sem garantia.`.slice(0, 255);
+  goalForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  goalForm.elements.namedItem('name').focus({ preventScroll: true });
+  showToast('Dados preenchidos na meta. Revise e salve quando quiser.');
 }
 
 function formatDate(value) {
@@ -1842,6 +1945,37 @@ document.querySelector('[data-transaction-previous]').addEventListener('click', 
 document.querySelector('[data-transaction-next]').addEventListener('click', () => {
   void loadTransactionHistory(transactionPage + 1);
 });
+
+simulatorForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  simulatorError.hidden = true;
+  simulatorForm.querySelectorAll('[aria-invalid="true"]').forEach((field) => {
+    field.removeAttribute('aria-invalid');
+    field.removeAttribute('title');
+  });
+  const raw = Object.fromEntries(new FormData(simulatorForm));
+  const { data, errors } = window.FincontrolCompoundInterest.validateSimulation(raw);
+  if (Object.keys(errors).length) {
+    Object.entries(errors).forEach(([name, message]) => {
+      const field = simulatorForm.elements.namedItem(name);
+      field?.setAttribute('aria-invalid', 'true');
+      if (field) field.title = message;
+    });
+    simulatorError.textContent = Object.values(errors).join(' ');
+    simulatorError.hidden = false;
+    simulatorForm.elements.namedItem(Object.keys(errors)[0])?.focus();
+    return;
+  }
+  try {
+    const simulation = window.FincontrolCompoundInterest.simulate(data);
+    renderSimulation(simulation, { ...data, goalName: String(raw.goalName || '').trim() });
+  } catch (error) {
+    simulatorError.textContent = error.message;
+    simulatorError.hidden = false;
+  }
+});
+
+useSimulationButton.addEventListener('click', useSimulationForGoal);
 
 goalForm.addEventListener('submit', async (event) => {
   event.preventDefault();

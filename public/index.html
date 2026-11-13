@@ -476,6 +476,8 @@
               </div>
             </article>
 
+
+
             <article class="budget-planning-card dashboard-grid__wide" id="planejamento" data-budget-planning aria-labelledby="budget-planning-title" aria-busy="true">
               <header class="budget-planning-heading">
                 <div>
@@ -551,6 +553,62 @@
                 </form>
               </div>
             </article>
+
+            <section class="goal-simulator dashboard-grid__wide" data-goal-simulator aria-labelledby="simulator-title">
+              <header class="goal-simulator__heading">
+                <div><span class="eyebrow"><span></span> Planeje com cenários</span><h2 id="simulator-title">Simulador de juros compostos</h2><p>Veja como os aportes e o tempo podem influenciar uma meta.</p></div>
+              </header>
+
+              <div class="goal-simulator__layout">
+                <form class="goal-simulator__form" data-simulator-form novalidate>
+                  <div class="form-field"><label for="simulator-goal-name">Nome da meta <small>(opcional)</small></label><div class="input-wrap"><input id="simulator-goal-name" name="goalName" type="text" maxlength="120" placeholder="Ex.: viagem, reserva, curso"></div></div>
+                  <div class="form-field"><label for="simulator-initial">Aporte inicial</label><div class="input-wrap"><input id="simulator-initial" name="initialAmount" type="number" min="0" max="9999999999999.99" step="0.01" inputmode="decimal" value="0" required></div></div>
+                  <div class="form-field"><label for="simulator-monthly">Aporte mensal</label><div class="input-wrap"><input id="simulator-monthly" name="monthlyContribution" type="number" min="0" max="9999999999999.99" step="0.01" inputmode="decimal" value="200" required></div></div>
+                  <div class="form-field"><label for="simulator-duration">Prazo</label><div class="input-wrap"><input id="simulator-duration" name="durationMonths" type="number" min="1" max="600" step="1" inputmode="numeric" value="12" required></div><small class="goal-simulator__helper">De 1 a 600 meses (até 50 anos).</small></div>
+                  <div class="goal-simulator__rate-row">
+                    <div class="form-field"><label for="simulator-rate">Taxa por período</label><div class="input-wrap"><input id="simulator-rate" name="ratePercent" type="number" min="0" max="100" step="0.01" inputmode="decimal" value="0.8" aria-describedby="simulator-rate-help" required></div></div>
+                    <div class="form-field"><label for="simulator-rate-period">Período da taxa</label><div class="input-wrap"><select id="simulator-rate-period" name="ratePeriod"><option value="monthly">Mensal</option><option value="annual" selected>Anual efetiva</option></select></div></div>
+                  </div>
+                  <small class="goal-simulator__helper" id="simulator-rate-help">A taxa anual efetiva é convertida para uma taxa mensal equivalente antes dos cálculos.</small>
+                  <p class="goal-simulator__error" data-simulator-error role="alert" hidden></p>
+                  <button class="primary-button primary-button--compact" type="submit"><span data-button-label>Simular resultado</span><span class="button-arrow" aria-hidden="true">→</span></button>
+                  <p class="goal-simulator__disclaimer">Aportes mensais são considerados no fim de cada mês. Esta estimativa não garante rendimentos e não considera impostos, taxas ou variação de mercado.</p>
+                </form>
+
+                <section class="goal-simulator__results" aria-label="Resultado da simulação" aria-live="polite">
+                  <p class="goal-simulator__empty" data-simulator-empty>Preencha os dados e selecione “Simular resultado” para ver a projeção.</p>
+                  <div data-simulation-results hidden>
+                    <p class="goal-simulator__status" data-simulator-status role="status"></p>
+                    <div class="goal-simulator__metrics" aria-label="Resumo da projeção">
+                      <article class="goal-simulator__metric goal-simulator__metric--primary"><span>Saldo estimado ao final</span><strong data-simulator-final>R$ 0,00</strong></article>
+                      <article class="goal-simulator__metric"><span>Total aportado</span><strong data-simulator-contributions>R$ 0,00</strong></article>
+                      <article class="goal-simulator__metric"><span>Rendimento estimado</span><strong data-simulator-earnings>R$ 0,00</strong></article>
+                    </div>
+                    <div class="goal-simulator__chart-card">
+                      <h3>Evolução mensal</h3>
+                      <ul class="goal-simulator__legend" aria-label="Legenda do gráfico"><li><span class="simulator-legend-line simulator-legend-line--balance" aria-hidden="true"></span>Saldo simulado</li><li><span class="simulator-legend-line simulator-legend-line--contributions" aria-hidden="true"></span>Total aportado</li></ul>
+                      <svg class="goal-simulator__chart" data-simulator-chart role="img" aria-labelledby="simulator-chart-title" aria-describedby="simulator-chart-description" viewBox="0 0 640 260" preserveAspectRatio="xMidYMid meet">
+                        <title id="simulator-chart-title">Saldo simulado e total aportado por mês</title>
+                      </svg>
+                      <p class="visually-hidden" id="simulator-chart-description" data-simulator-chart-description></p>
+                    </div>
+                    <details class="goal-simulator__table-details">
+                      <summary>Ver evolução mensal em tabela</summary>
+                      <div class="goal-simulator__table-scroll">
+                        <table>
+                          <caption>Detalhamento mensal da simulação</caption>
+                          <thead><tr><th scope="col">Mês</th><th scope="col">Total aportado</th><th scope="col">Rendimento</th><th scope="col">Saldo simulado</th></tr></thead>
+                          <tbody data-simulator-table-body></tbody>
+                        </table>
+                      </div>
+                    </details>
+                    <p class="goal-simulator__conversion" data-simulator-conversion></p>
+                    <p class="goal-simulator__limit-message" data-simulator-limit-message role="status" hidden></p>
+                    <button class="secondary-button goal-simulator__use-button" type="button" data-use-simulation hidden>Usar resultado para criar uma meta</button>
+                  </div>
+                </section>
+              </div>
+            </section>
 
             <article class="goals-card dashboard-grid__wide" id="metas" data-goals-section aria-labelledby="goals-title" aria-busy="true">
               <header class="goals-heading">
@@ -716,6 +774,7 @@
       </form>
     </dialog>
 
-  <script src="/js/app.js" defer></script>
+    <script src="/js/compound-interest.js" defer></script>
+    <script src="/js/app.js" defer></script>
 </body>
 </html>
