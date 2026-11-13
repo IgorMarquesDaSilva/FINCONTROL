@@ -1,5 +1,6 @@
 const authService = require('../services/auth.service');
 const AppError = require('../errors/AppError');
+const recurrenceService = require('../services/recurrence.service');
 
 async function authenticate(request, _response, next) {
   const token = request.cookies.fincontrol_session;
@@ -8,8 +9,14 @@ async function authenticate(request, _response, next) {
     return next(new AppError('Faca login para continuar.', 401, 'authentication_required'));
   }
 
+  let payload;
   try {
-    const payload = authService.verifyToken(token);
+    payload = authService.verifyToken(token);
+  } catch (_error) {
+    return next(new AppError('Sua sessao expirou. Entre novamente.', 401, 'invalid_session'));
+  }
+
+  try {
     const user = await authService.findUserById(payload.sub);
 
     if (!user || Number(payload.sv || 0) !== Number(user.session_version || 0)) {
@@ -18,10 +25,10 @@ async function authenticate(request, _response, next) {
 
     delete user.session_version;
     request.user = user;
+    await recurrenceService.generateDue(user.id);
     return next();
   } catch (error) {
-    if (error instanceof AppError) return next(error);
-    return next(new AppError('Sua sessao expirou. Entre novamente.', 401, 'invalid_session'));
+    return next(error);
   }
 }
 

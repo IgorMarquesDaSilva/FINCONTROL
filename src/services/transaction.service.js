@@ -9,6 +9,7 @@ const TRANSACTION_SELECT = `SELECT
     DATE_FORMAT(t.transaction_date, '%Y-%m-%d') AS transaction_date,
     t.created_at,
     t.updated_at,
+    t.recurrence_id,
     c.id AS category_id,
     c.name AS category_name
   FROM transactions t
@@ -23,6 +24,7 @@ function mapTransaction(row) {
     transactionDate: row.transaction_date,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    recurrenceId: row.recurrence_id,
     category: {
       id: row.category_id,
       name: row.category_name,

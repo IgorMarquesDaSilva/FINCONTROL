@@ -30,6 +30,7 @@ Se a instalação local possuir senha para o usuário `root`, altere apenas o se
 - `password_reset_tokens`: hashes de tokens temporários, com expiração e registro de uso; nunca armazena o token enviado ao usuário.
 - `categories`: categorias pertencentes a um único usuário.
 - `transactions`: receitas e despesas unificadas por `type` (`INCOME` ou `EXPENSE`).
+- `recurrences`: regras semanais, mensais e anuais; movimentações geradas guardam a versão e o ciclo para impedir duplicidade.
 - `budgets`: orçamento mensal por categoria.
 - `financial_goals`: metas financeiras e progresso.
 
@@ -50,3 +51,5 @@ Mudanças futuras no schema devem ser adicionadas como novas migrations numerada
 `004_user_preferences.sql` adiciona as preferências do perfil. Execute-a uma vez em bancos existentes. Em instalações novas, a tabela já faz parte de `fincontrol_xampp.sql`. A troca da moeda altera a unidade exibida, sem converter valores históricos por uma taxa de câmbio.
 
 `005_learning_progress.sql` adiciona o progresso das trilhas e desafios. Execute-a uma vez em bancos existentes; instalações novas já incluem as tabelas no instalador do XAMPP.
+
+`006_recurrences.sql` adiciona recorrências e o vínculo opcional às movimentações. Execute-a uma vez em bancos existentes. O servidor verifica vencimentos ao iniciar, a cada 15 minutos e em requisições autenticadas. Pausar ou cancelar a regra não remove lançamentos anteriores.

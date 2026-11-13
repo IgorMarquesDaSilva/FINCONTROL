@@ -510,8 +510,28 @@ select { font: inherit; }
 .education-quiz .primary-button { width: fit-content; }
 .education-quiz__feedback { color: #315d51; line-height: 1.55; }
 .education-action-error { color: #a93032 !important; font-size: .875rem; }
+.recurrences-workspace { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(18rem, .85fr); gap: 1rem; align-items: start; }
+.recurrences-panel { padding: 1.5rem; border: 1px solid #d9e3e3; border-radius: .875rem; background: #fff; }
+.recurrences-panel > h2 { margin: 0 0 .4rem; font-size: 1.25rem; }
+.recurrences-panel > p { color: #53656e; line-height: 1.55; }
+.recurrences-panel .form-field { margin-bottom: 1rem; }
+.recurrences-panel select { width: 100%; min-height: 2.875rem; padding: 0 .75rem; border: 0; background: transparent; color: inherit; }
+.recurrences-form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+.recurrences-form-actions { display: flex; justify-content: flex-end; gap: .75rem; }
+.recurrences-status { font-size: .875rem; }
+.recurrence-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .75rem; padding: 1.125rem 0; border-top: 1px solid #e3ebeb; }
+.recurrence-item h3 { margin: 0; font-size: 1rem; }
+.recurrence-item p { margin: .35rem 0; color: #53656e; font-size: .875rem; }
+.recurrence-item small { color: #60717b; }
+.recurrence-item > strong { white-space: nowrap; }
+.recurrence-item__actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .75rem; }
+.recurrence-item__actions button { padding: .25rem 0; border: 0; background: transparent; color: #007a5b; font: inherit; font-size: .8125rem; font-weight: 700; cursor: pointer; }
+.recurrence-item__actions button:last-child { color: #b34d36; }
+.recurrence-item__actions button:hover { text-decoration: underline; }
+.recurrences-form-error { color: #a93032 !important; font-size: .875rem; }
 
 @media (max-width: 61.25rem) {
+  .recurrences-workspace { grid-template-columns: 1fr; }
   .auth-view { grid-template-columns: minmax(21.25rem, 42%) minmax(26.875rem, 58%); }
   .auth-showcase { padding: 2.375rem 2.125rem; }
   .showcase-copy h1 { font-size: clamp(2.8rem, 6vw, 4.25rem); }
@@ -548,6 +568,8 @@ select { font: inherit; }
 }
 
 @media (max-width: 33.75rem) {
+  .recurrences-panel { padding: 1.125rem; }
+  .recurrences-form-row { grid-template-columns: 1fr; gap: 0; }
   .education-toolbar { flex-direction: column; align-items: stretch; }
   .education-grid { grid-template-columns: 1fr; }
   .education-tracks__grid, .education-challenges__grid { grid-template-columns: 1fr; }

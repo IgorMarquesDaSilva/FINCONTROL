@@ -117,6 +117,7 @@ const simulatorStatus = document.querySelector('[data-simulator-status]');
 const dashboardPages = [
   { route: 'visao-geral', title: 'Visão geral', description: 'Seu resumo financeiro, insights e relatório mensal.', selectors: ['.welcome-row', '.metric-grid', '[data-dashboard-error]', '[data-insights-section]', '[data-monthly-report]'] },
   { route: 'movimentacoes', title: 'Movimentações', description: 'Consulte e filtre suas receitas e despesas.', selectors: ['#movimentacoes'] },
+  { route: 'recorrencias', title: 'Recorrências', description: 'Automatize receitas e despesas que se repetem.' },
   { route: 'receitas', title: 'Receitas', description: 'Registre e acompanhe o dinheiro que entra.', selectors: ['.income-card'] },
   { route: 'despesas', title: 'Despesas', description: 'Registre e acompanhe o dinheiro que sai.', selectors: ['.expense-card'] },
   { route: 'planejamento', title: 'Planejamento', description: 'Defina limites mensais e acompanhe seus gastos.', selectors: ['[data-budget-planning]'] },
@@ -163,6 +164,9 @@ function initializeDashboardPages() {
       if (content) body.append(content);
     });
     if (page.route === 'aprenda') addLearningContent(body);
+    if (page.route === 'recorrencias') window.FincontrolRecurrences.mount(body, {
+      date: formatDate, currency: formatCurrency, today: todayIsoDate,
+    });
   });
 
   const welcomeTitle = dashboardContent.querySelector('.welcome-row h1');
@@ -427,6 +431,7 @@ function renderTransactions(listElement, transactions, type) {
     const meta = document.createElement('small');
     const category = document.createElement('span');
     description.textContent = transaction.description || 'Sem descrição';
+    if (transaction.recurrenceId) description.append(' · Automático');
     category.className = 'income-item__category';
     category.textContent = transaction.category?.name || (isExpense ? 'Despesa' : 'Receita');
     meta.append(category, ` - ${formatDate(transaction.transactionDate)}`);
@@ -520,6 +525,7 @@ function renderMovementHistory(displayedTransactions = historyTransactions) {
     details.className = 'movement-row__details';
     const description = document.createElement('strong');
     description.textContent = transaction.description || 'Sem descrição';
+    if (transaction.recurrenceId) description.append(' · Automático');
     const meta = document.createElement('small');
     const type = document.createElement('span');
     type.className = 'movement-row__type';
@@ -1450,11 +1456,17 @@ function showDashboard(user) {
   restoreTransactionFilters();
   void loadProfile().finally(() => {
     void window.FincontrolEducation.refresh();
+    void window.FincontrolRecurrences.refresh();
     void loadFinancialData();
     void loadBudgetPlanning();
     void loadGoals();
   });
 }
+
+window.addEventListener('fincontrol:transactions-changed', () => {
+  void loadFinancialData();
+  void loadBudgetPlanning();
+});
 
 profileForm.addEventListener('submit', async (event) => {
   event.preventDefault();
