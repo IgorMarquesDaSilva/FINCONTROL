@@ -1449,6 +1449,7 @@ function showDashboard(user) {
   setDefaultTransactionDates();
   restoreTransactionFilters();
   void loadProfile().finally(() => {
+    void window.FincontrolEducation.refresh();
     void loadFinancialData();
     void loadBudgetPlanning();
     void loadGoals();

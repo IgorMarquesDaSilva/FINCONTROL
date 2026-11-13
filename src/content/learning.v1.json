@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "tracks": [
+    { "id": "comece-aqui", "title": "Comece pelo cotidiano", "description": "Observe seus hábitos e crie espaço para escolhas conscientes.", "articleIds": ["primeiro-orcamento", "consumo-consciente"] },
+    { "id": "proximos-passos", "title": "Prepare seus próximos passos", "description": "Entenda imprevistos, crédito e investimento antes de decidir.", "articleIds": ["reserva-de-emergencia", "credito-com-cuidado", "investimentos-basicos"] }
+  ],
+  "quizzes": {
+    "primeiro-orcamento": { "question": "Qual é o primeiro passo para montar um orçamento?", "options": ["Registrar receitas e despesas", "Cortar todo gasto com lazer", "Escolher um investimento"], "correctIndex": 0, "explanation": "O registro mostra a realidade do mês. Depois, você pode definir prioridades que caibam na sua rotina." },
+    "consumo-consciente": { "question": "O que ajuda a comparar duas compras?", "options": ["Olhar só o preço da etiqueta", "Considerar preço, duração e eventuais custos futuros", "Comprar a opção mais popular"], "correctIndex": 1, "explanation": "O custo real inclui manutenção, duração e juros, quando houver." },
+    "reserva-de-emergencia": { "question": "Para que serve a reserva de emergência?", "options": ["Para despesas inesperadas", "Para garantir rendimentos altos", "Para financiar qualquer compra por impulso"], "correctIndex": 0, "explanation": "A reserva oferece uma margem para lidar com imprevistos e precisa ter acesso fácil." },
+    "credito-com-cuidado": { "question": "O que o CET ajuda a comparar?", "options": ["Apenas o valor da parcela", "O custo total de propostas de crédito", "A rentabilidade de investimentos"], "correctIndex": 1, "explanation": "O Custo Efetivo Total reúne juros, tarifas, impostos e outros custos do crédito." },
+    "investimentos-basicos": { "question": "O que avaliar antes de escolher um investimento?", "options": ["Só o rendimento anunciado", "Objetivo, prazo, risco e custos", "A recomendação de qualquer rede social"], "correctIndex": 1, "explanation": "Objetivo, prazo, risco e custos precisam combinar com sua situação; rendimentos não são garantidos." }
+  },
+  "challenges": [
+    { "id": "sete-dias", "title": "Observe sete dias de gastos", "description": "Anote seus gastos em papel ou no celular durante sete dias. Você decide se quer cadastrá-los no FINCONTROL." },
+    { "id": "primeira-reserva", "title": "Planeje sua primeira reserva", "description": "Escolha um valor possível para guardar. Pode ser pequeno e não precisa fazer uma movimentação agora." },
+    { "id": "compare-credito", "title": "Compare duas ofertas fictícias", "description": "Pesquise o significado de CET e compare duas propostas de exemplo, sem contratar crédito." }
+  ]
+}
