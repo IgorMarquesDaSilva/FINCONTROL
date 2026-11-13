@@ -9,11 +9,11 @@
     "start": "node server.js",
     "test": "npm run test:unit && npm run test:integration",
     "test:unit": "node --experimental-test-coverage --test --test-coverage-include=src/services/budget.rules.js --test-coverage-include=src/services/dashboard.rules.js --test-coverage-include=src/services/goal.rules.js --test-coverage-include=src/services/insights.rules.js --test-coverage-lines=90 --test-coverage-branches=70",
-    "test:integration": "node --test integration/auth.integration.js integration/password.integration.js integration/transaction.integration.js integration/budget.integration.js integration/dashboard.integration.js integration/goal.integration.js integration/insights.integration.js integration/e2e.integration.js",
+    "test:integration": "node --test integration/auth.integration.js integration/password.integration.js integration/profile.integration.js integration/education.integration.js integration/recurrence.integration.js integration/notification.integration.js integration/export.integration.js integration/transaction.integration.js integration/budget.integration.js integration/dashboard.integration.js integration/goal.integration.js integration/insights.integration.js integration/e2e.integration.js",
     "db:check": "node scripts/check-database.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -24,6 +24,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.15.0",
-    "nodemailer": "^10.5.0"
+    "nodemailer": "^10.5.0",
+    "pdfkit": "^0.20.2"
   }
 }

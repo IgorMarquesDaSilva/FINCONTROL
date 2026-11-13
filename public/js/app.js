@@ -88,6 +88,7 @@ const deleteDescription = document.querySelector('[data-delete-description]');
 const deleteCategory = document.querySelector('[data-delete-category]');
 const deleteDate = document.querySelector('[data-delete-date]');
 const deleteAmount = document.querySelector('[data-delete-amount]');
+const profileForm = document.querySelector('[data-profile-form]');
 
 let toastTimer;
 let transactions = [];
@@ -105,6 +106,8 @@ let budgetCategories = [];
 let monthlyBudgets = [];
 let goals = [];
 let currentSimulation = null;
+let currentPreferences = { currency: 'BRL', dateFormat: 'DD/MM/YYYY', timeZone: 'America/Sao_Paulo', monthStartDay: 1 };
+let currentProfileEmail = '';
 
 const simulatorFinal = document.querySelector('[data-simulator-final]');
 const simulatorContributions = document.querySelector('[data-simulator-contributions]');
@@ -114,36 +117,18 @@ const simulatorStatus = document.querySelector('[data-simulator-status]');
 const dashboardPages = [
   { route: 'visao-geral', title: 'Visão geral', description: 'Seu resumo financeiro, insights e relatório mensal.', selectors: ['.welcome-row', '.metric-grid', '[data-dashboard-error]', '[data-insights-section]', '[data-monthly-report]'] },
   { route: 'movimentacoes', title: 'Movimentações', description: 'Consulte e filtre suas receitas e despesas.', selectors: ['#movimentacoes'] },
+  { route: 'recorrencias', title: 'Recorrências', description: 'Automatize receitas e despesas que se repetem.' },
+  { route: 'avisos', title: 'Avisos', description: 'Acompanhe limites e lançamentos programados.' },
   { route: 'receitas', title: 'Receitas', description: 'Registre e acompanhe o dinheiro que entra.', selectors: ['.income-card'] },
   { route: 'despesas', title: 'Despesas', description: 'Registre e acompanhe o dinheiro que sai.', selectors: ['.expense-card'] },
   { route: 'planejamento', title: 'Planejamento', description: 'Defina limites mensais e acompanhe seus gastos.', selectors: ['[data-budget-planning]'] },
   { route: 'metas', title: 'Metas', description: 'Organize seus objetivos, simule aportes e acompanhe seu progresso.', selectors: ['[data-goal-simulator]', '[data-goals-section]'] },
   { route: 'aprenda', title: 'Aprenda', description: 'Conceitos financeiros explicados de forma simples.' },
+  { route: 'perfil', title: 'Perfil', description: 'Seus dados e preferências de uso.', selectors: ['[data-profile-section]'] },
 ];
 
 function addLearningContent(container) {
-  const cards = [
-    ['Comece pelo essencial', 'Anote o que entra e o que sai. Um registro simples já ajuda a entender seus hábitos e tomar decisões com mais clareza.'],
-    ['Planeje com flexibilidade', 'Use limites mensais como referência. Se um gasto mudar, ajuste o plano sem culpa e escolha o próximo passo possível.'],
-    ['Construa uma reserva aos poucos', 'Guardar um valor pequeno com regularidade pode ajudar a lidar com despesas inesperadas. Escolha um ritmo que caiba no seu orçamento.'],
-  ];
-  const grid = document.createElement('div');
-  grid.className = 'learning-grid';
-  cards.forEach(([title, description], index) => {
-    const card = document.createElement('article');
-    card.className = 'learning-card';
-    const number = document.createElement('span');
-    number.className = 'learning-card__number';
-    number.setAttribute('aria-hidden', 'true');
-    number.textContent = `0${index + 1}`;
-    const heading = document.createElement('h2');
-    heading.textContent = title;
-    const text = document.createElement('p');
-    text.textContent = description;
-    card.append(number, heading, text);
-    grid.append(card);
-  });
-  container.append(grid);
+  void window.FincontrolEducation.mount(container);
 }
 
 function initializeDashboardPages() {
@@ -180,6 +165,10 @@ function initializeDashboardPages() {
       if (content) body.append(content);
     });
     if (page.route === 'aprenda') addLearningContent(body);
+    if (page.route === 'recorrencias') window.FincontrolRecurrences.mount(body, {
+      date: formatDate, currency: formatCurrency, today: todayIsoDate,
+    });
+    if (page.route === 'avisos') window.FincontrolNotifications.mount(body, { date: formatDate });
   });
 
   const welcomeTitle = dashboardContent.querySelector('.welcome-row h1');
@@ -228,12 +217,12 @@ window.addEventListener('hashchange', () => {
 
 const chartColors = ['#20b981', '#ff9f68', '#6683e8', '#bf83d5', '#e1b44c', '#55a9c4', '#e27483', '#82936e'];
 
-const currencyFormatter = new Intl.NumberFormat('pt-BR', {
+let currencyFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
   currency: 'BRL',
 });
 
-const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
+let dateFormatter = new Intl.DateTimeFormat('pt-BR', {
   timeZone: 'UTC',
   day: '2-digit',
   month: '2-digit',
@@ -257,6 +246,46 @@ async function api(path, options = {}) {
 
   return payload;
 }
+
+async function downloadExport(path, filename) {
+  const response = await fetch(path, { credentials: 'same-origin' });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload.error?.message || 'Não foi possível gerar o arquivo.');
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+document.querySelector('[data-export-csv]').addEventListener('click', async (event) => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  try {
+    const params = new URLSearchParams([...new FormData(transactionFilterForm)]
+      .filter(([, value]) => String(value).trim()));
+    await downloadExport(`/api/exports/transactions.csv?${params}`, 'fincontrol-movimentacoes.csv');
+    showToast('CSV pronto para download.');
+  } catch (error) { showToast(error.message, 'error'); }
+  finally { button.disabled = false; }
+});
+
+document.querySelector('[data-export-pdf]').addEventListener('click', async (event) => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  try {
+    const month = reportMonthInput.value || currentMonthKey();
+    await downloadExport(`/api/exports/monthly.pdf?month=${encodeURIComponent(month)}`, `fincontrol-${month}.pdf`);
+    showToast('PDF pronto para download.');
+  } catch (error) { showToast(error.message, 'error'); }
+  finally { button.disabled = false; }
+});
 
 function showToast(message, type = 'success') {
   clearTimeout(toastTimer);
@@ -291,7 +320,7 @@ function renderSimulationChart(simulation) {
     const gridY = y(value);
     add('line', { x1: padding.left, y1: gridY, x2: width - padding.right, y2: gridY, class: 'simulator-chart__grid' });
     const label = add('text', { x: padding.left - 8, y: gridY + 4, 'text-anchor': 'end', class: 'simulator-chart__label' });
-    label.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 }).format(value);
+    label.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: currentPreferences.currency, notation: 'compact', maximumFractionDigits: 1 }).format(value);
   }
   const line = (key, className) => add('polyline', {
     points: rows.map((row, index) => `${x(index)},${y(row[key])}`).join(' '),
@@ -358,18 +387,32 @@ function useSimulationForGoal() {
 }
 
 function formatDate(value) {
+  if (currentPreferences.dateFormat === 'YYYY-MM-DD') return String(value).slice(0, 10);
   return dateFormatter.format(new Date(`${value}T00:00:00.000Z`));
 }
 
 function todayIsoDate() {
-  const now = new Date();
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  return now.toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: currentPreferences.timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date());
+  const get = (type) => parts.find((part) => part.type === type).value;
+  return `${get('year')}-${get('month')}-${get('day')}`;
 }
 
 function currentMonthKey() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const [year, month, day] = todayIsoDate().split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day < currentPreferences.monthStartDay ? 0 : 1));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+function financialMonthBounds(monthKey) {
+  const [year, month] = monthKey.split('-').map(Number);
+  const next = new Date(Date.UTC(year, month, 1));
+  const day = String(currentPreferences.monthStartDay).padStart(2, '0');
+  return {
+    start: `${year}-${String(month).padStart(2, '0')}-${day}`,
+    end: `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, '0')}-${day}`,
+  };
 }
 
 function pluralizeTransaction(count) {
@@ -386,12 +429,12 @@ function setDefaultTransactionDates() {
 function updateFinancialSummary() {
   const incomeTotal = incomes.reduce((sum, income) => sum + Number(income.amount || 0), 0);
   const expenseTotal = expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-  const monthKey = currentMonthKey();
+  const { start, end } = financialMonthBounds(currentMonthKey());
   const monthIncome = incomes
-    .filter((income) => String(income.transactionDate || '').startsWith(monthKey))
+    .filter((income) => income.transactionDate >= start && income.transactionDate < end)
     .reduce((sum, income) => sum + Number(income.amount || 0), 0);
   const monthExpense = expenses
-    .filter((expense) => String(expense.transactionDate || '').startsWith(monthKey))
+    .filter((expense) => expense.transactionDate >= start && expense.transactionDate < end)
     .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
   const transactionCount = incomes.length + expenses.length;
 
@@ -430,6 +473,7 @@ function renderTransactions(listElement, transactions, type) {
     const meta = document.createElement('small');
     const category = document.createElement('span');
     description.textContent = transaction.description || 'Sem descrição';
+    if (transaction.recurrenceId) description.append(' · Automático');
     category.className = 'income-item__category';
     category.textContent = transaction.category?.name || (isExpense ? 'Despesa' : 'Receita');
     meta.append(category, ` - ${formatDate(transaction.transactionDate)}`);
@@ -523,6 +567,7 @@ function renderMovementHistory(displayedTransactions = historyTransactions) {
     details.className = 'movement-row__details';
     const description = document.createElement('strong');
     description.textContent = transaction.description || 'Sem descrição';
+    if (transaction.recurrenceId) description.append(' · Automático');
     const meta = document.createElement('small');
     const type = document.createElement('span');
     type.className = 'movement-row__type';
@@ -1080,6 +1125,7 @@ async function loadBudgetPlanning() {
     renderBudgetSummary(reportPayload.report, monthlyBudgets);
     renderBudgetList(monthlyBudgets, budgetCategories);
     budgetList.hidden = false;
+    void window.FincontrolNotifications.refresh();
   } catch (error) {
     if (requestId !== budgetRequestId) return;
     budgetError.textContent = error.message;
@@ -1399,6 +1445,40 @@ function showAuth(mode = 'login') {
   setTimeout(() => activeView.form.querySelector('input:not([type="hidden"])')?.focus(), 50);
 }
 
+function applyPreferences(preferences) {
+  currentPreferences = { ...currentPreferences, ...preferences };
+  currencyFormatter = new Intl.NumberFormat('pt-BR', {
+    style: 'currency', currency: currentPreferences.currency,
+  });
+  dateFormatter = new Intl.DateTimeFormat(currentPreferences.dateFormat === 'MM/DD/YYYY' ? 'en-US' : 'pt-BR', {
+    timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric',
+  });
+}
+
+async function loadProfile() {
+  try {
+    const { profile } = await api('/api/profile');
+    currentProfileEmail = profile.email;
+    applyPreferences(profile.preferences);
+    dashboardMonthInput.value = currentMonthKey();
+    reportMonthInput.value = currentMonthKey();
+    budgetMonthInput.value = currentMonthKey();
+    setDefaultTransactionDates();
+    for (const [name, value] of Object.entries({ ...profile.preferences, name: profile.name, email: profile.email })) {
+      const field = profileForm.elements.namedItem(name);
+      if (field) field.value = value;
+    }
+    document.querySelector('[data-profile-created-at]').textContent = new Intl.DateTimeFormat('pt-BR', {
+      dateStyle: 'long', timeZone: currentPreferences.timeZone,
+    }).format(new Date(profile.createdAt));
+    document.querySelectorAll('[data-user-name]').forEach((element) => { element.textContent = profile.name; });
+    document.querySelectorAll('[data-first-name]').forEach((element) => { element.textContent = profile.name.split(/\s+/)[0]; });
+    document.querySelectorAll('[data-user-initial]').forEach((element) => { element.textContent = profile.name[0].toUpperCase(); });
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
 function showDashboard(user) {
   currentUserId = String(user.id);
   const name = user.name?.trim() || 'Usuário';
@@ -1417,10 +1497,58 @@ function showDashboard(user) {
   dashboardMonthInput.value ||= currentMonthKey();
   setDefaultTransactionDates();
   restoreTransactionFilters();
+  void loadProfile().finally(() => {
+    void window.FincontrolEducation.refresh();
+    void window.FincontrolRecurrences.refresh();
+    void window.FincontrolNotifications.refresh();
+    void loadFinancialData();
+    void loadBudgetPlanning();
+    void loadGoals();
+  });
+}
+
+window.addEventListener('fincontrol:transactions-changed', () => {
   void loadFinancialData();
   void loadBudgetPlanning();
-  void loadGoals();
-}
+  void window.FincontrolNotifications.refresh();
+});
+
+profileForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  clearErrors(profileForm);
+  const values = Object.fromEntries(new FormData(profileForm));
+  values.monthStartDay = Number(values.monthStartDay);
+  if (values.email.trim().toLowerCase() !== currentProfileEmail && !values.currentPassword) {
+    displayErrors(profileForm, { currentPassword: 'Informe sua senha atual para trocar o e-mail.' });
+    return;
+  }
+  try {
+    setLoading(profileForm, true);
+    const { profile, message } = await api('/api/profile', {
+      method: 'PUT', body: JSON.stringify(values),
+    });
+    currentProfileEmail = profile.email;
+    profileForm.elements.namedItem('currentPassword').value = '';
+    applyPreferences(profile.preferences);
+    document.querySelectorAll('[data-user-name]').forEach((element) => { element.textContent = profile.name; });
+    document.querySelectorAll('[data-first-name]').forEach((element) => { element.textContent = profile.name.split(/\s+/)[0]; });
+    dashboardMonthInput.value = currentMonthKey();
+    reportMonthInput.value = currentMonthKey();
+    budgetMonthInput.value = currentMonthKey();
+    renderAllTransactions();
+    renderMovementHistory();
+    void loadDashboardSummary();
+    void loadMonthlyReport();
+    void loadBudgetPlanning();
+    void loadGoals();
+    showToast(message);
+  } catch (error) {
+    displayErrors(profileForm, error.fields);
+    if (!Object.keys(error.fields || {}).length) showToast(error.message, 'error');
+  } finally {
+    setLoading(profileForm, false);
+  }
+});
 
 document.querySelectorAll('[data-show-register]').forEach((button) => {
   button.addEventListener('click', () => showAuth('register'));
@@ -1551,12 +1679,12 @@ resetForm.addEventListener('submit', async (event) => {
   }
 });
 
-document.querySelector('[data-open-password-change]').addEventListener('click', () => {
+document.querySelectorAll('[data-open-password-change]').forEach((button) => button.addEventListener('click', () => {
   passwordChangeError.hidden = true;
   clearErrors(passwordChangeForm);
   passwordChangeDialog.showModal();
   passwordChangeForm.elements.namedItem('currentPassword').focus();
-});
+}));
 document.querySelectorAll('[data-close-password-dialog]').forEach((button) => {
   button.addEventListener('click', () => passwordChangeDialog.close());
 });

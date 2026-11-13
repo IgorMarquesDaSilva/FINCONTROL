@@ -210,11 +210,14 @@
         <nav class="sidebar-nav" aria-label="Menu principal">
           <a class="sidebar-link is-active" href="#visao-geral" aria-current="page"><span aria-hidden="true">⌂</span> Visão geral</a>
           <a class="sidebar-link" href="#movimentacoes"><span aria-hidden="true">⇅</span> Movimentações</a>
+          <a class="sidebar-link" href="#recorrencias"><span aria-hidden="true">↻</span> Recorrências</a>
+          <a class="sidebar-link" href="#avisos"><span aria-hidden="true">◉</span> Avisos <span class="notification-count" data-notification-count hidden></span></a>
           <a class="sidebar-link" href="#receitas"><span aria-hidden="true">↕</span> Receitas</a>
           <a class="sidebar-link" href="#despesas"><span aria-hidden="true">↘</span> Despesas</a>
           <a class="sidebar-link" href="#planejamento"><span aria-hidden="true">◎</span> Planejamento</a>
           <a class="sidebar-link" href="#metas"><span aria-hidden="true">◇</span> Metas</a>
           <a class="sidebar-link" href="#aprenda"><span aria-hidden="true">◇</span> Aprenda</a>
+          <a class="sidebar-link" href="#perfil"><span aria-hidden="true">◯</span> Perfil</a>
         </nav>
         <div class="sidebar-account">
           <div class="user-chip">
@@ -277,7 +280,7 @@
                 <h2 id="movement-history-title">Todas as movimentações</h2>
                 <p>Receitas e despesas reunidas em ordem cronológica.</p>
               </div>
-              <small data-transaction-count></small>
+              <div class="export-actions"><small data-transaction-count></small><button class="secondary-button export-button" type="button" data-export-csv>Exportar CSV</button></div>
             </header>
             <form class="movement-filters" data-transaction-filters>
               <div class="movement-filters__search"><label for="transaction-search">Buscar descrição</label><input id="transaction-search" name="search" type="search" maxlength="180" placeholder="Ex.: mercado, salário"></div>
@@ -312,6 +315,7 @@
               <div class="report-period">
                 <label for="report-month">Mês do relatório</label>
                 <input id="report-month" type="month" data-report-month aria-controls="report-content">
+                <button class="secondary-button export-button" type="button" data-export-pdf>Baixar PDF</button>
               </div>
             </div>
 
@@ -641,6 +645,23 @@
               </div>
             </article>
           </section>
+          <section class="profile-card" data-profile-section aria-labelledby="profile-section-title">
+            <div class="profile-card__heading"><h2 id="profile-section-title">Dados da conta</h2><p>Personalize sua experiência. Trocar o e-mail exige sua senha atual.</p></div>
+            <form data-profile-form novalidate>
+              <div class="profile-grid">
+                <div class="form-field"><label for="profile-name">Nome</label><div class="input-wrap"><input id="profile-name" name="name" autocomplete="name" maxlength="120" required></div><span class="field-error" data-error-for="name"></span></div>
+                <div class="form-field"><label for="profile-email">E-mail</label><div class="input-wrap"><input id="profile-email" name="email" type="email" autocomplete="email" maxlength="191" required></div><span class="field-error" data-error-for="email"></span></div>
+                <div class="form-field"><label for="profile-currency">Moeda dos valores</label><div class="input-wrap"><select id="profile-currency" name="currency"><option value="BRL">Real (BRL)</option><option value="USD">Dólar (USD)</option><option value="EUR">Euro (EUR)</option></select></div><span class="field-error" data-error-for="currency"></span></div>
+                <div class="form-field"><label for="profile-date-format">Formato de data</label><div class="input-wrap"><select id="profile-date-format" name="dateFormat"><option value="DD/MM/YYYY">DD/MM/AAAA</option><option value="MM/DD/YYYY">MM/DD/AAAA</option><option value="YYYY-MM-DD">AAAA-MM-DD</option></select></div><span class="field-error" data-error-for="dateFormat"></span></div>
+                <div class="form-field"><label for="profile-time-zone">Fuso horário</label><div class="input-wrap"><select id="profile-time-zone" name="timeZone"><option value="America/Sao_Paulo">Brasília (São Paulo)</option><option value="America/Manaus">Manaus</option><option value="America/Rio_Branco">Rio Branco</option><option value="UTC">UTC</option></select></div><span class="field-error" data-error-for="timeZone"></span></div>
+                <div class="form-field"><label for="profile-month-start">Dia inicial do mês financeiro</label><div class="input-wrap"><input id="profile-month-start" name="monthStartDay" type="number" min="1" max="28" step="1" required></div><span class="field-error" data-error-for="monthStartDay"></span></div>
+              </div>
+              <p class="profile-note">A moeda define a unidade exibida nos seus valores; não há conversão cambial automática.</p>
+              <div class="form-field"><label for="profile-password">Senha atual <small>(necessária ao trocar o e-mail)</small></label><div class="input-wrap"><input id="profile-password" name="currentPassword" type="password" autocomplete="current-password"></div><span class="field-error" data-error-for="currentPassword"></span></div>
+              <p class="profile-note">Conta criada em <span data-profile-created-at>—</span>.</p>
+              <div class="profile-actions"><button class="secondary-button" type="button" data-open-password-change>Alterar senha</button><button class="primary-button primary-button--compact" type="submit"><span data-button-label>Salvar preferências</span><span class="spinner" aria-hidden="true"></span></button></div>
+            </form>
+          </section>
         </div>
       </div>
     </section>
@@ -775,6 +796,9 @@
     </dialog>
 
     <script src="/js/compound-interest.js" defer></script>
+    <script src="/js/education.js" defer></script>
+    <script src="/js/recurrences.js" defer></script>
+    <script src="/js/notifications.js" defer></script>
     <script src="/js/app.js" defer></script>
 </body>
 </html>

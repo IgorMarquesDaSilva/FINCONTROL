@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "articles": [
+    {
+      "id": "primeiro-orcamento",
+      "topic": "Orçamento",
+      "level": "Iniciante",
+      "title": "Seu primeiro orçamento, sem complicação",
+      "summary": "Organize o que entra e o que sai antes de decidir o que mudar.",
+      "minutes": 3,
+      "reviewedAt": "2026-11-13",
+      "sourceName": "Banco Central do Brasil — Caderno de Educação Financeira",
+      "sourceUrl": "https://www.bcb.gov.br/pre/pef/port/caderno_cidadania_financeira.pdf",
+      "sections": [
+        { "heading": "Comece pelo registro", "text": "Anote toda receita e despesa durante um mês. Receita é o dinheiro que entra; despesa é o que sai. Inclua valores pequenos, porque a soma deles também afeta o resultado." },
+        { "heading": "Agrupe sem julgar", "text": "Separe os gastos em grupos úteis para você, como transporte, alimentação e lazer. O objetivo é perceber padrões, não se culpar por uma compra isolada." },
+        { "heading": "Escolha uma mudança possível", "text": "Compare as entradas e saídas e defina uma prioridade para o próximo mês. Se o plano não couber na sua rotina, ajuste-o: um orçamento serve para orientar decisões reais." }
+      ]
+    },
+    {
+      "id": "credito-com-cuidado",
+      "topic": "Crédito",
+      "level": "Intermediário",
+      "title": "Como comparar uma oferta de crédito",
+      "summary": "Entenda o custo total antes de assumir parcelas.",
+      "minutes": 3,
+      "reviewedAt": "2026-11-13",
+      "sourceName": "Banco Central do Brasil — Cuidados ao contratar crédito",
+      "sourceUrl": "https://www.bcb.gov.br/meubc/faqs/p/cuidados-na-hora-de-contratar-uma-operacao-de-credito",
+      "sections": [
+        { "heading": "Olhe além da parcela", "text": "Uma parcela que parece pequena pode somar um valor alto ao longo de muitos meses. Compare o valor total a pagar e verifique se as parcelas cabem junto das suas outras despesas." },
+        { "heading": "Entenda o CET", "text": "CET significa Custo Efetivo Total. Ele reúne juros, tarifas, impostos e outros custos da operação em uma taxa que ajuda a comparar propostas de crédito." },
+        { "heading": "Dê tempo à decisão", "text": "Peça as condições por escrito e compare mais de uma oferta. Se a compra pode esperar, considere guardar o valor antes de assumir uma dívida." }
+      ]
+    },
+    {
+      "id": "reserva-de-emergencia",
+      "topic": "Reserva",
+      "level": "Iniciante",
+      "title": "Uma reserva para os imprevistos",
+      "summary": "Um valor separado pode dar tempo para lidar com situações inesperadas.",
+      "minutes": 3,
+      "reviewedAt": "2026-11-13",
+      "sourceName": "Banco Central do Brasil — Lidando com imprevistos",
+      "sourceUrl": "https://www.bcb.gov.br/cidadaniafinanceira/lidando-imprevistos",
+      "sections": [
+        { "heading": "O que é a reserva", "text": "É dinheiro separado para emergências, como perda de renda ou uma despesa de saúde inesperada. Ela pode evitar que um imprevisto vire uma dívida cara." },
+        { "heading": "Comece no seu ritmo", "text": "Escolha um valor que caiba no orçamento e tente guardá-lo com frequência. O tamanho da reserva depende das suas despesas e da estabilidade da sua renda; não existe uma quantia única para todos." },
+        { "heading": "Mantenha acesso fácil", "text": "Uma reserva precisa estar disponível quando o imprevisto acontecer. Antes de escolher onde guardá-la, observe segurança, prazo para resgate e condições de uso." }
+      ]
+    },
+    {
+      "id": "consumo-consciente",
+      "topic": "Consumo",
+      "level": "Iniciante",
+      "title": "Compras com mais intenção",
+      "summary": "Perguntas simples ajudam a distinguir vontade, necessidade e prioridade.",
+      "minutes": 2,
+      "reviewedAt": "2026-11-13",
+      "sourceName": "Banco Central do Brasil — Caderno de Educação Financeira",
+      "sourceUrl": "https://www.bcb.gov.br/pre/pef/port/caderno_cidadania_financeira.pdf",
+      "sections": [
+        { "heading": "Pause antes de pagar", "text": "Pergunte se a compra é necessária agora, se o preço cabe no orçamento e se há um objetivo mais importante para esse dinheiro. Comprar por prazer também pode fazer parte do plano." },
+        { "heading": "Compare o custo real", "text": "Observe preço, duração, manutenção e eventuais juros. Um item mais barato na etiqueta nem sempre custa menos ao longo do tempo." },
+        { "heading": "Revise sem culpa", "text": "Se uma decisão não saiu como esperado, use o registro de gastos para aprender e ajustar a próxima. Há espaço para escolhas diferentes em meses diferentes." }
+      ]
+    },
+    {
+      "id": "investimentos-basicos",
+      "topic": "Investimentos",
+      "level": "Intermediário",
+      "title": "Investir começa por entender o risco",
+      "summary": "Conheça objetivo, prazo e risco antes de escolher um produto.",
+      "minutes": 3,
+      "reviewedAt": "2026-11-13",
+      "sourceName": "CVM — Educação do investidor",
+      "sourceUrl": "https://www.gov.br/cvm/pt-br/assuntos/educacao/",
+      "sections": [
+        { "heading": "Defina o propósito", "text": "Dinheiro para uma emergência e dinheiro para um objetivo distante têm necessidades diferentes. O prazo e a possibilidade de perda importam tanto quanto a promessa de rendimento." },
+        { "heading": "Risco não desaparece", "text": "Todo investimento tem riscos. Entender como o produto funciona, seus custos e quando o dinheiro pode ser resgatado ajuda a evitar surpresas." },
+        { "heading": "Aprenda antes de aplicar", "text": "Desconfie de retornos garantidos muito altos. Compare informações de fontes oficiais e considere sua situação pessoal; este conteúdo é educativo e não recomenda um produto específico." }
+      ]
+    }
+  ]
+}

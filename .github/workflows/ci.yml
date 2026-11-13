@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Testes e segurança
+    runs-on: ubuntu-latest
+    services:
+      database:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: ci-only-password
+          MARIADB_DATABASE: fincontrol
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mariadb-admin ping -h 127.0.0.1 -u root -pci-only-password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      NODE_ENV: test
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: fincontrol
+      DB_USERNAME: root
+      DB_PASSWORD: ci-only-password
+      JWT_SECRET: ci-only-secret-for-isolated-tests
+      APP_BASE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Instalar dependências do lockfile
+        run: npm ci
+      - name: Carregar estrutura do banco de teste
+        env:
+          DB_CONTAINER: ${{ job.services.database.id }}
+        run: docker exec -i --env MYSQL_PWD="$DB_PASSWORD" "$DB_CONTAINER" mariadb --user=root < database/fincontrol_xampp.sql
+      - name: Verificar sintaxe JavaScript
+        run: |
+          node --check server.js
+          find public src -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Testes unitários e de integração
+        run: npm test
+      - name: Auditoria de dependências
+        run: npm audit --omit=dev --audit-level=moderate

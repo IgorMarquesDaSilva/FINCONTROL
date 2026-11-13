@@ -9,6 +9,7 @@ function mapExpense(row) {
     amount: Number(row.amount),
     transactionDate: row.transaction_date,
     createdAt: row.created_at,
+    recurrenceId: row.recurrence_id,
     category: {
       id: row.category_id,
       name: row.category_name,
@@ -24,6 +25,7 @@ async function listByUser(userId) {
         CAST(t.amount AS CHAR) AS amount,
         DATE_FORMAT(t.transaction_date, '%Y-%m-%d') AS transaction_date,
         t.created_at,
+        t.recurrence_id,
         c.id AS category_id,
         c.name AS category_name
       FROM transactions t
@@ -64,6 +66,7 @@ async function create(userId, expense) {
           CAST(t.amount AS CHAR) AS amount,
           DATE_FORMAT(t.transaction_date, '%Y-%m-%d') AS transaction_date,
           t.created_at,
+          t.recurrence_id,
           c.id AS category_id,
           c.name AS category_name
         FROM transactions t

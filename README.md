@@ -169,6 +169,10 @@ Os insights também exigem sessão autenticada e usam somente as movimentações
 - limitação de requisições nas rotas de login e cadastro;
 - `.env` ignorado pelo Git.
 
-## Próximas funcionalidades
+## Exportação
 
-A área autenticada já está preparada visualmente para receber categorias, metas, conteúdos educativos e demais backlogs ainda não implementadas.
+Em **Movimentações**, aplique os filtros e use **Exportar CSV**. O arquivo inclui todos os registros que correspondem aos filtros, até 10 mil por exportação; se ultrapassar esse limite, reduza o período. Em **Visão geral**, escolha o mês do relatório e use **Baixar PDF**. O período considera o dia inicial do mês financeiro definido no perfil.
+
+As duas rotas exigem sessão: `GET /api/exports/transactions.csv` e `GET /api/exports/monthly.pdf?month=AAAA-MM`. Os arquivos são montados em memória, enviados com `Cache-Control: no-store` e não são gravados na pasta pública. Moeda e datas seguem as preferências da conta.
+
+Para atualizar bancos existentes, execute as migrations numeradas em `database/migrations/` após a última já aplicada. O instalador `database/fincontrol_xampp.sql` contém o esquema completo para bancos novos.

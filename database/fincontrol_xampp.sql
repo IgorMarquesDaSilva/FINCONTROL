@@ -19,6 +19,18 @@ CREATE TABLE users (
     UNIQUE KEY uq_users_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE user_preferences (
+    user_id BIGINT UNSIGNED NOT NULL,
+    currency CHAR(3) NOT NULL DEFAULT 'BRL',
+    date_format VARCHAR(12) NOT NULL DEFAULT 'DD/MM/YYYY',
+    time_zone VARCHAR(64) NOT NULL DEFAULT 'America/Sao_Paulo',
+    month_start_day TINYINT UNSIGNED NOT NULL DEFAULT 1,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id),
+    CONSTRAINT fk_user_preferences_user FOREIGN KEY (user_id) REFERENCES users (id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE password_reset_tokens (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     user_id BIGINT UNSIGNED NOT NULL,
@@ -31,6 +43,27 @@ CREATE TABLE password_reset_tokens (
     KEY idx_password_reset_user_expiry (user_id, expires_at),
     CONSTRAINT fk_password_reset_user
         FOREIGN KEY (user_id) REFERENCES users (id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE learning_progress (
+    user_id BIGINT UNSIGNED NOT NULL,
+    article_id VARCHAR(80) NOT NULL,
+    content_version INT UNSIGNED NOT NULL,
+    read_at DATETIME NULL,
+    quiz_passed_at DATETIME NULL,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, article_id),
+    CONSTRAINT fk_learning_progress_user FOREIGN KEY (user_id) REFERENCES users (id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE learning_challenges (
+    user_id BIGINT UNSIGNED NOT NULL,
+    challenge_id VARCHAR(80) NOT NULL,
+    completed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, challenge_id),
+    CONSTRAINT fk_learning_challenges_user FOREIGN KEY (user_id) REFERENCES users (id)
         ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -50,6 +83,60 @@ CREATE TABLE categories (
         ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE notification_preferences (
+    user_id BIGINT UNSIGNED NOT NULL,
+    budget_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    recurrence_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    muted_until DATETIME NULL,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id),
+    CONSTRAINT fk_notification_preferences_user FOREIGN KEY (user_id) REFERENCES users (id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE notifications (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    user_id BIGINT UNSIGNED NOT NULL,
+    event_key VARCHAR(191) NOT NULL,
+    type ENUM('BUDGET', 'RECURRENCE') NOT NULL,
+    title VARCHAR(160) NOT NULL,
+    message VARCHAR(255) NOT NULL,
+    link VARCHAR(80) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    read_at DATETIME NULL,
+    silenced_at DATETIME NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_notifications_event (user_id, event_key),
+    KEY idx_notifications_user_visible (user_id, silenced_at, created_at),
+    CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES users (id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE recurrences (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    user_id BIGINT UNSIGNED NOT NULL,
+    category_id BIGINT UNSIGNED NOT NULL,
+    type ENUM('INCOME', 'EXPENSE') NOT NULL,
+    description VARCHAR(180) NOT NULL,
+    amount DECIMAL(15,2) NOT NULL,
+    frequency ENUM('WEEKLY', 'MONTHLY', 'YEARLY') NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NULL,
+    schedule_version INT UNSIGNED NOT NULL DEFAULT 1,
+    next_cycle_index INT UNSIGNED NOT NULL DEFAULT 0,
+    next_run_date DATE NOT NULL,
+    status ENUM('ACTIVE', 'PAUSED', 'CANCELED', 'COMPLETED') NOT NULL DEFAULT 'ACTIVE',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_recurrences_due (status, next_run_date),
+    KEY idx_recurrences_user (user_id, status),
+    CONSTRAINT fk_recurrences_user FOREIGN KEY (user_id) REFERENCES users (id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_recurrences_category FOREIGN KEY (category_id, user_id) REFERENCES categories (id, user_id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE transactions (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     user_id BIGINT UNSIGNED NOT NULL,
@@ -58,6 +145,9 @@ CREATE TABLE transactions (
     description VARCHAR(180) NOT NULL,
     amount DECIMAL(15,2) NOT NULL,
     transaction_date DATE NOT NULL,
+    recurrence_id BIGINT UNSIGNED NULL,
+    recurrence_schedule_version INT UNSIGNED NULL,
+    recurrence_cycle_index INT UNSIGNED NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
@@ -66,13 +156,16 @@ CREATE TABLE transactions (
     KEY idx_transactions_user_category_date (user_id, category_id, transaction_date),
     KEY idx_transactions_user_amount (user_id, amount),
     KEY idx_transactions_category_user (category_id, user_id),
+    UNIQUE KEY uq_transactions_recurrence_cycle (recurrence_id, recurrence_schedule_version, recurrence_cycle_index),
     CONSTRAINT chk_transactions_amount_positive CHECK (amount > 0),
     CONSTRAINT fk_transactions_user
         FOREIGN KEY (user_id) REFERENCES users (id)
         ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_transactions_category_owner
         FOREIGN KEY (category_id, user_id) REFERENCES categories (id, user_id)
-        ON UPDATE CASCADE ON DELETE RESTRICT
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_transactions_recurrence FOREIGN KEY (recurrence_id) REFERENCES recurrences (id)
+        ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE budgets (

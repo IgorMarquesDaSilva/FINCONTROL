@@ -9,6 +9,7 @@ const TRANSACTION_SELECT = `SELECT
     DATE_FORMAT(t.transaction_date, '%Y-%m-%d') AS transaction_date,
     t.created_at,
     t.updated_at,
+    t.recurrence_id,
     c.id AS category_id,
     c.name AS category_name
   FROM transactions t
@@ -23,6 +24,7 @@ function mapTransaction(row) {
     transactionDate: row.transaction_date,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    recurrenceId: row.recurrence_id,
     category: {
       id: row.category_id,
       name: row.category_name,
@@ -73,6 +75,22 @@ async function listByUser(userId, filters) {
       hasNext: filters.page < totalPages,
     },
   };
+}
+
+async function exportByUser(userId, filters) {
+  const { sql, parameters } = listConditions(userId, filters);
+  const sortColumn = filters.sort === 'amount' ? 't.amount' : 't.transaction_date';
+  const sortOrder = filters.order === 'asc' ? 'ASC' : 'DESC';
+  const [rows] = await pool.execute(
+    `${TRANSACTION_SELECT} WHERE ${sql}
+     ORDER BY ${sortColumn} ${sortOrder}, t.transaction_date ${sortOrder}, t.id ${sortOrder}
+     LIMIT 10001`,
+    parameters,
+  );
+  if (rows.length > 10000) {
+    throw new AppError('Há mais de 10 mil registros. Reduza o período ou aplique filtros para exportar.', 413, 'export_too_large');
+  }
+  return rows.map(mapTransaction);
 }
 
 async function listCategoriesByUser(userId) {
@@ -193,4 +211,4 @@ async function remove(userId, transactionId) {
   }
 }
 
-module.exports = { getByUser, listByUser, listCategoriesByUser, remove, update };
+module.exports = { getByUser, listByUser, exportByUser, listCategoriesByUser, remove, update };

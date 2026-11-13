@@ -1,18 +1,8 @@
 const pool = require('../config/database');
+const { shiftMonth, periodBounds, getPeriodSettings } = require('./period');
 
-function shiftMonth(year, month, offset) {
-  const date = new Date(Date.UTC(year, month - 1 + offset, 1));
-  return { year: date.getUTCFullYear(), month: date.getUTCMonth() + 1 };
-}
-
-function periodBounds({ year, month }) {
-  const start = `${year}-${String(month).padStart(2, '0')}-01`;
-  const next = shiftMonth(year, month, 1);
-  return { start, end: `${next.year}-${String(next.month).padStart(2, '0')}-01` };
-}
-
-async function totalsForPeriod(userId, period) {
-  const { start, end } = periodBounds(period);
+async function totalsForPeriod(userId, period, startDay) {
+  const { start, end } = periodBounds(period.year, period.month, startDay);
   const [rows] = await pool.execute(
     `SELECT t.type, COUNT(*) AS transaction_count,
         CAST(COALESCE(SUM(t.amount), 0) AS CHAR) AS total
@@ -30,11 +20,12 @@ async function totalsForPeriod(userId, period) {
 }
 
 async function monthly(userId, period) {
+  const { startDay } = await getPeriodSettings(userId);
   const previousPeriod = shiftMonth(period.year, period.month, -1);
-  const { start, end } = periodBounds(period);
+  const { start, end } = periodBounds(period.year, period.month, startDay);
   const [current, previous, categoryResult, topResult] = await Promise.all([
-    totalsForPeriod(userId, period),
-    totalsForPeriod(userId, previousPeriod),
+    totalsForPeriod(userId, period, startDay),
+    totalsForPeriod(userId, previousPeriod, startDay),
     pool.execute(
       `SELECT c.name AS category, CAST(SUM(t.amount) AS CHAR) AS total, COUNT(*) AS transaction_count
         FROM transactions t

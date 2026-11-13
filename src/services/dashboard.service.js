@@ -1,15 +1,10 @@
 const pool = require('../config/database');
 const { buildDashboardSummary } = require('./dashboard.rules');
-
-function periodBounds(year, month) {
-  const start = `${year}-${String(month).padStart(2, '0')}-01`;
-  const next = new Date(Date.UTC(year, month, 1));
-  const end = `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, '0')}-01`;
-  return { start, end };
-}
+const { periodBounds, getPeriodSettings } = require('./period');
 
 async function monthly(userId, { year, month }) {
-  const { start, end } = periodBounds(year, month);
+  const { startDay } = await getPeriodSettings(userId);
+  const { start, end } = periodBounds(year, month, startDay);
   const [summaryResult, transactionResult] = await Promise.all([
     pool.execute(
       `SELECT
