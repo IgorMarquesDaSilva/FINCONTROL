@@ -118,6 +118,7 @@ const dashboardPages = [
   { route: 'visao-geral', title: 'Visão geral', description: 'Seu resumo financeiro, insights e relatório mensal.', selectors: ['.welcome-row', '.metric-grid', '[data-dashboard-error]', '[data-insights-section]', '[data-monthly-report]'] },
   { route: 'movimentacoes', title: 'Movimentações', description: 'Consulte e filtre suas receitas e despesas.', selectors: ['#movimentacoes'] },
   { route: 'recorrencias', title: 'Recorrências', description: 'Automatize receitas e despesas que se repetem.' },
+  { route: 'avisos', title: 'Avisos', description: 'Acompanhe limites e lançamentos programados.' },
   { route: 'receitas', title: 'Receitas', description: 'Registre e acompanhe o dinheiro que entra.', selectors: ['.income-card'] },
   { route: 'despesas', title: 'Despesas', description: 'Registre e acompanhe o dinheiro que sai.', selectors: ['.expense-card'] },
   { route: 'planejamento', title: 'Planejamento', description: 'Defina limites mensais e acompanhe seus gastos.', selectors: ['[data-budget-planning]'] },
@@ -167,6 +168,7 @@ function initializeDashboardPages() {
     if (page.route === 'recorrencias') window.FincontrolRecurrences.mount(body, {
       date: formatDate, currency: formatCurrency, today: todayIsoDate,
     });
+    if (page.route === 'avisos') window.FincontrolNotifications.mount(body, { date: formatDate });
   });
 
   const welcomeTitle = dashboardContent.querySelector('.welcome-row h1');
@@ -1083,6 +1085,7 @@ async function loadBudgetPlanning() {
     renderBudgetSummary(reportPayload.report, monthlyBudgets);
     renderBudgetList(monthlyBudgets, budgetCategories);
     budgetList.hidden = false;
+    void window.FincontrolNotifications.refresh();
   } catch (error) {
     if (requestId !== budgetRequestId) return;
     budgetError.textContent = error.message;
@@ -1457,6 +1460,7 @@ function showDashboard(user) {
   void loadProfile().finally(() => {
     void window.FincontrolEducation.refresh();
     void window.FincontrolRecurrences.refresh();
+    void window.FincontrolNotifications.refresh();
     void loadFinancialData();
     void loadBudgetPlanning();
     void loadGoals();
@@ -1466,6 +1470,7 @@ function showDashboard(user) {
 window.addEventListener('fincontrol:transactions-changed', () => {
   void loadFinancialData();
   void loadBudgetPlanning();
+  void window.FincontrolNotifications.refresh();
 });
 
 profileForm.addEventListener('submit', async (event) => {

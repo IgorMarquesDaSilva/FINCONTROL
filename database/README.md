@@ -31,6 +31,7 @@ Se a instalação local possuir senha para o usuário `root`, altere apenas o se
 - `categories`: categorias pertencentes a um único usuário.
 - `transactions`: receitas e despesas unificadas por `type` (`INCOME` ou `EXPENSE`).
 - `recurrences`: regras semanais, mensais e anuais; movimentações geradas guardam a versão e o ciclo para impedir duplicidade.
+- `notifications` e `notification_preferences`: avisos internos únicos por evento, leitura, silêncio e preferências individuais.
 - `budgets`: orçamento mensal por categoria.
 - `financial_goals`: metas financeiras e progresso.
 
@@ -53,3 +54,5 @@ Mudanças futuras no schema devem ser adicionadas como novas migrations numerada
 `005_learning_progress.sql` adiciona o progresso das trilhas e desafios. Execute-a uma vez em bancos existentes; instalações novas já incluem as tabelas no instalador do XAMPP.
 
 `006_recurrences.sql` adiciona recorrências e o vínculo opcional às movimentações. Execute-a uma vez em bancos existentes. O servidor verifica vencimentos ao iniciar, a cada 15 minutos e em requisições autenticadas. Pausar ou cancelar a regra não remove lançamentos anteriores.
+
+`007_notifications.sql` adiciona a central de avisos e suas preferências. Execute-a uma vez em bancos existentes. Avisos são gerados dentro da aplicação, sem SMTP, e o par `(user_id, event_key)` impede duplicação do mesmo evento.

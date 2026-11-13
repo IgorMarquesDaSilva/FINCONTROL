@@ -529,9 +529,27 @@ select { font: inherit; }
 .recurrence-item__actions button:last-child { color: #b34d36; }
 .recurrence-item__actions button:hover { text-decoration: underline; }
 .recurrences-form-error { color: #a93032 !important; font-size: .875rem; }
+.notification-count { display: inline-flex; min-width: 1.25rem; height: 1.25rem; align-items: center; justify-content: center; padding: 0 .25rem; border-radius: 999px; background: #dcf8e9; color: #006d4b; font-size: .6875rem; font-weight: 800; }
+.notifications-workspace { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(17rem, .7fr); gap: 1rem; align-items: start; }
+.notifications-panel { padding: 1.5rem; border: 1px solid #d9e3e3; border-radius: .875rem; background: #fff; }
+.notifications-panel > h2 { margin: 0 0 .4rem; font-size: 1.25rem; }
+.notifications-panel > p, .notifications-panel form > p { color: #53656e; line-height: 1.5; }
+.notification-item { padding: 1.125rem 0; border-top: 1px solid #e3ebeb; }
+.notification-item--unread { border-left: .1875rem solid #16aa79; padding-left: .875rem; }
+.notification-item h3 { margin: 0 0 .35rem; font-size: 1rem; }
+.notification-item p { margin: 0 0 .5rem; color: #53656e; line-height: 1.5; }
+.notification-item small { color: #60717b; }
+.notification-item__actions { display: flex; flex-wrap: wrap; gap: .875rem; margin-top: .65rem; }
+.notification-item__actions button, .notification-item__actions a { padding: 0; border: 0; background: transparent; color: #007a5b; font: inherit; font-size: .8125rem; font-weight: 700; cursor: pointer; }
+.notification-item__actions button:hover, .notification-item__actions a:hover { text-decoration: underline; }
+.notifications-toggle { display: flex; gap: .55rem; align-items: center; margin: 1rem 0; cursor: pointer; }
+.notifications-toggle input { accent-color: #008a65; }
+.notifications-mute { display: grid; gap: .4rem; margin: 1.25rem 0; font-size: .875rem; font-weight: 700; }
+.notifications-mute select { min-height: 2.75rem; padding: 0 .75rem; border: 1px solid #cfdddd; border-radius: .625rem; background: #fff; font: inherit; }
 
 @media (max-width: 61.25rem) {
   .recurrences-workspace { grid-template-columns: 1fr; }
+  .notifications-workspace { grid-template-columns: 1fr; }
   .auth-view { grid-template-columns: minmax(21.25rem, 42%) minmax(26.875rem, 58%); }
   .auth-showcase { padding: 2.375rem 2.125rem; }
   .showcase-copy h1 { font-size: clamp(2.8rem, 6vw, 4.25rem); }

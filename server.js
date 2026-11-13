@@ -2,19 +2,22 @@ const app = require('./src/app');
 const env = require('./src/config/env');
 const pool = require('./src/config/database');
 const recurrenceService = require('./src/services/recurrence.service');
+const notificationService = require('./src/services/notification.service');
 
 const server = app.listen(env.port, () => {
   console.log(`FINCONTROL disponivel em http://localhost:${env.port}`);
 });
-const recurrenceTimer = setInterval(() => {
-  recurrenceService.generateDueForAllUsers().catch((error) => {
-    console.error('Falha ao atualizar movimentações recorrentes.', error);
-  });
-}, 15 * 60 * 1000);
+async function updateScheduledWork() {
+  try {
+    await recurrenceService.generateDueForAllUsers();
+    await notificationService.generateForAllUsers();
+  } catch (error) {
+    console.error('Falha ao atualizar lançamentos e avisos programados.', error);
+  }
+}
+const recurrenceTimer = setInterval(() => { void updateScheduledWork(); }, 15 * 60 * 1000);
 recurrenceTimer.unref();
-recurrenceService.generateDueForAllUsers().catch((error) => {
-  console.error('Falha ao atualizar movimentações recorrentes.', error);
-});
+void updateScheduledWork();
 
 async function shutdown(signal) {
   clearInterval(recurrenceTimer);
