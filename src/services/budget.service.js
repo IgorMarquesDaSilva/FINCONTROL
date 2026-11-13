@@ -1,13 +1,7 @@
 const pool = require('../config/database');
 const AppError = require('../errors/AppError');
 const { mapBudget } = require('./budget.rules');
-
-function periodBounds(year, month) {
-  const start = `${year}-${String(month).padStart(2, '0')}-01`;
-  const nextDate = new Date(Date.UTC(year, month, 1));
-  const end = `${nextDate.getUTCFullYear()}-${String(nextDate.getUTCMonth() + 1).padStart(2, '0')}-01`;
-  return { start, end };
-}
+const { periodBounds, getPeriodSettings } = require('./period');
 
 const BUDGET_SELECT = `SELECT b.id, b.user_id, b.category_id,
     b.reference_year, b.reference_month,
@@ -25,7 +19,8 @@ function budgetFromRows(rows) {
 }
 
 async function listByUser(userId, { year, month }) {
-  const { start, end } = periodBounds(year, month);
+  const { startDay } = await getPeriodSettings(userId);
+  const { start, end } = periodBounds(year, month, startDay);
   const [rows] = await pool.execute(
     `${BUDGET_SELECT}
      WHERE b.user_id = ? AND b.reference_year = ? AND b.reference_month = ?
@@ -55,7 +50,8 @@ async function getByUser(userId, budgetId) {
   const budgetPeriod = periodRows[0];
   if (!budgetPeriod) throw new AppError('Orçamento não encontrado.', 404, 'budget_not_found');
 
-  const { start, end } = periodBounds(Number(budgetPeriod.reference_year), Number(budgetPeriod.reference_month));
+  const { startDay } = await getPeriodSettings(userId);
+  const { start, end } = periodBounds(Number(budgetPeriod.reference_year), Number(budgetPeriod.reference_month), startDay);
   const [rows] = await pool.execute(
     `${BUDGET_SELECT}
      WHERE b.id = ? AND b.user_id = ?

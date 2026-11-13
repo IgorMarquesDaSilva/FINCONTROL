@@ -1,53 +1,52 @@
 const pool = require('../config/database');
 const { generateInsights } = require('./insights.rules');
-
-function shiftMonth(year, month, offset) {
-  const date = new Date(Date.UTC(year, month - 1 + offset, 1));
-  return { year: date.getUTCFullYear(), month: date.getUTCMonth() + 1 };
-}
+const { shiftMonth, periodBounds, getPeriodSettings } = require('./period');
 
 function dateString(date) {
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
 }
 
-function periodStart(period) {
-  return `${period.year}-${String(period.month).padStart(2, '0')}-01`;
-}
-
-function periodEnd(period) {
-  const next = shiftMonth(period.year, period.month, 1);
-  return `${next.year}-${String(next.month).padStart(2, '0')}-01`;
-}
-
-function periodWindow(period, now = new Date()) {
-  const currentMonth = { year: now.getUTCFullYear(), month: now.getUTCMonth() + 1 };
+function periodWindow(period, now = new Date(), startDay = 1, timeZone = 'UTC') {
+  const dateParts = new Intl.DateTimeFormat('en-US', {
+    timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(now);
+  const part = (type) => Number(dateParts.find((item) => item.type === type).value);
+  const localYear = part('year');
+  const localMonth = part('month');
+  const localDay = part('day');
+  const currentMonth = localDay < startDay
+    ? shiftMonth(localYear, localMonth, -1)
+    : { year: localYear, month: localMonth };
   const selectedIsFuture = period.year > currentMonth.year
     || (period.year === currentMonth.year && period.month > currentMonth.month);
   if (selectedIsFuture) return null;
 
   const previousPeriod = shiftMonth(period.year, period.month, -1);
+  const currentBounds = periodBounds(period.year, period.month, startDay);
+  const previousBounds = periodBounds(previousPeriod.year, previousPeriod.month, startDay);
   const selectedIsCurrent = period.year === currentMonth.year && period.month === currentMonth.month;
   if (!selectedIsCurrent) {
     return {
       previousPeriod,
-      currentStart: periodStart(period),
-      currentEnd: periodEnd(period),
-      previousStart: periodStart(previousPeriod),
-      previousEnd: periodStart(period),
+      currentStart: currentBounds.start,
+      currentEnd: currentBounds.end,
+      previousStart: previousBounds.start,
+      previousEnd: previousBounds.end,
     };
   }
 
-  const currentDay = now.getUTCDate();
-  const previousLastDay = new Date(Date.UTC(previousPeriod.year, previousPeriod.month, 0)).getUTCDate();
-  const previousCutoff = Math.min(currentDay, previousLastDay);
-  const currentEndDate = new Date(Date.UTC(period.year, period.month - 1, currentDay + 1));
-  const previousEndDate = new Date(Date.UTC(previousPeriod.year, previousPeriod.month - 1, previousCutoff + 1));
+  const currentStartDate = new Date(`${currentBounds.start}T00:00:00.000Z`);
+  const previousStartDate = new Date(`${previousBounds.start}T00:00:00.000Z`);
+  const todayDate = new Date(Date.UTC(localYear, localMonth - 1, localDay));
+  const elapsedDays = Math.round((todayDate - currentStartDate) / 86400000) + 1;
+  const currentEndDate = new Date(Math.min(todayDate.getTime() + 86400000, new Date(`${currentBounds.end}T00:00:00.000Z`).getTime()));
+  const previousEndDate = new Date(Math.min(previousStartDate.getTime() + elapsedDays * 86400000, new Date(`${previousBounds.end}T00:00:00.000Z`).getTime()));
 
   return {
     previousPeriod,
-    currentStart: periodStart(period),
+    currentStart: currentBounds.start,
     currentEnd: dateString(currentEndDate),
-    previousStart: periodStart(previousPeriod),
+    previousStart: previousBounds.start,
     previousEnd: dateString(previousEndDate),
   };
 }
@@ -57,7 +56,8 @@ function emptyTotals() {
 }
 
 async function monthly(userId, period, now = new Date()) {
-  const window = periodWindow(period, now);
+  const { startDay, timeZone } = await getPeriodSettings(userId);
+  const window = periodWindow(period, now, startDay, timeZone);
   if (!window) {
     return {
       status: 'insufficient_data',

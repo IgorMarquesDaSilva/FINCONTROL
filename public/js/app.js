@@ -88,6 +88,7 @@ const deleteDescription = document.querySelector('[data-delete-description]');
 const deleteCategory = document.querySelector('[data-delete-category]');
 const deleteDate = document.querySelector('[data-delete-date]');
 const deleteAmount = document.querySelector('[data-delete-amount]');
+const profileForm = document.querySelector('[data-profile-form]');
 
 let toastTimer;
 let transactions = [];
@@ -105,6 +106,8 @@ let budgetCategories = [];
 let monthlyBudgets = [];
 let goals = [];
 let currentSimulation = null;
+let currentPreferences = { currency: 'BRL', dateFormat: 'DD/MM/YYYY', timeZone: 'America/Sao_Paulo', monthStartDay: 1 };
+let currentProfileEmail = '';
 
 const simulatorFinal = document.querySelector('[data-simulator-final]');
 const simulatorContributions = document.querySelector('[data-simulator-contributions]');
@@ -119,6 +122,7 @@ const dashboardPages = [
   { route: 'planejamento', title: 'Planejamento', description: 'Defina limites mensais e acompanhe seus gastos.', selectors: ['[data-budget-planning]'] },
   { route: 'metas', title: 'Metas', description: 'Organize seus objetivos, simule aportes e acompanhe seu progresso.', selectors: ['[data-goal-simulator]', '[data-goals-section]'] },
   { route: 'aprenda', title: 'Aprenda', description: 'Conceitos financeiros explicados de forma simples.' },
+  { route: 'perfil', title: 'Perfil', description: 'Seus dados e preferências de uso.', selectors: ['[data-profile-section]'] },
 ];
 
 function addLearningContent(container) {
@@ -228,12 +232,12 @@ window.addEventListener('hashchange', () => {
 
 const chartColors = ['#20b981', '#ff9f68', '#6683e8', '#bf83d5', '#e1b44c', '#55a9c4', '#e27483', '#82936e'];
 
-const currencyFormatter = new Intl.NumberFormat('pt-BR', {
+let currencyFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
   currency: 'BRL',
 });
 
-const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
+let dateFormatter = new Intl.DateTimeFormat('pt-BR', {
   timeZone: 'UTC',
   day: '2-digit',
   month: '2-digit',
@@ -291,7 +295,7 @@ function renderSimulationChart(simulation) {
     const gridY = y(value);
     add('line', { x1: padding.left, y1: gridY, x2: width - padding.right, y2: gridY, class: 'simulator-chart__grid' });
     const label = add('text', { x: padding.left - 8, y: gridY + 4, 'text-anchor': 'end', class: 'simulator-chart__label' });
-    label.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 }).format(value);
+    label.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: currentPreferences.currency, notation: 'compact', maximumFractionDigits: 1 }).format(value);
   }
   const line = (key, className) => add('polyline', {
     points: rows.map((row, index) => `${x(index)},${y(row[key])}`).join(' '),
@@ -358,18 +362,32 @@ function useSimulationForGoal() {
 }
 
 function formatDate(value) {
+  if (currentPreferences.dateFormat === 'YYYY-MM-DD') return String(value).slice(0, 10);
   return dateFormatter.format(new Date(`${value}T00:00:00.000Z`));
 }
 
 function todayIsoDate() {
-  const now = new Date();
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  return now.toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: currentPreferences.timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date());
+  const get = (type) => parts.find((part) => part.type === type).value;
+  return `${get('year')}-${get('month')}-${get('day')}`;
 }
 
 function currentMonthKey() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const [year, month, day] = todayIsoDate().split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day < currentPreferences.monthStartDay ? 0 : 1));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+function financialMonthBounds(monthKey) {
+  const [year, month] = monthKey.split('-').map(Number);
+  const next = new Date(Date.UTC(year, month, 1));
+  const day = String(currentPreferences.monthStartDay).padStart(2, '0');
+  return {
+    start: `${year}-${String(month).padStart(2, '0')}-${day}`,
+    end: `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, '0')}-${day}`,
+  };
 }
 
 function pluralizeTransaction(count) {
@@ -386,12 +404,12 @@ function setDefaultTransactionDates() {
 function updateFinancialSummary() {
   const incomeTotal = incomes.reduce((sum, income) => sum + Number(income.amount || 0), 0);
   const expenseTotal = expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-  const monthKey = currentMonthKey();
+  const { start, end } = financialMonthBounds(currentMonthKey());
   const monthIncome = incomes
-    .filter((income) => String(income.transactionDate || '').startsWith(monthKey))
+    .filter((income) => income.transactionDate >= start && income.transactionDate < end)
     .reduce((sum, income) => sum + Number(income.amount || 0), 0);
   const monthExpense = expenses
-    .filter((expense) => String(expense.transactionDate || '').startsWith(monthKey))
+    .filter((expense) => expense.transactionDate >= start && expense.transactionDate < end)
     .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
   const transactionCount = incomes.length + expenses.length;
 
@@ -1399,6 +1417,40 @@ function showAuth(mode = 'login') {
   setTimeout(() => activeView.form.querySelector('input:not([type="hidden"])')?.focus(), 50);
 }
 
+function applyPreferences(preferences) {
+  currentPreferences = { ...currentPreferences, ...preferences };
+  currencyFormatter = new Intl.NumberFormat('pt-BR', {
+    style: 'currency', currency: currentPreferences.currency,
+  });
+  dateFormatter = new Intl.DateTimeFormat(currentPreferences.dateFormat === 'MM/DD/YYYY' ? 'en-US' : 'pt-BR', {
+    timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric',
+  });
+}
+
+async function loadProfile() {
+  try {
+    const { profile } = await api('/api/profile');
+    currentProfileEmail = profile.email;
+    applyPreferences(profile.preferences);
+    dashboardMonthInput.value = currentMonthKey();
+    reportMonthInput.value = currentMonthKey();
+    budgetMonthInput.value = currentMonthKey();
+    setDefaultTransactionDates();
+    for (const [name, value] of Object.entries({ ...profile.preferences, name: profile.name, email: profile.email })) {
+      const field = profileForm.elements.namedItem(name);
+      if (field) field.value = value;
+    }
+    document.querySelector('[data-profile-created-at]').textContent = new Intl.DateTimeFormat('pt-BR', {
+      dateStyle: 'long', timeZone: currentPreferences.timeZone,
+    }).format(new Date(profile.createdAt));
+    document.querySelectorAll('[data-user-name]').forEach((element) => { element.textContent = profile.name; });
+    document.querySelectorAll('[data-first-name]').forEach((element) => { element.textContent = profile.name.split(/\s+/)[0]; });
+    document.querySelectorAll('[data-user-initial]').forEach((element) => { element.textContent = profile.name[0].toUpperCase(); });
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
 function showDashboard(user) {
   currentUserId = String(user.id);
   const name = user.name?.trim() || 'Usuário';
@@ -1417,10 +1469,49 @@ function showDashboard(user) {
   dashboardMonthInput.value ||= currentMonthKey();
   setDefaultTransactionDates();
   restoreTransactionFilters();
-  void loadFinancialData();
-  void loadBudgetPlanning();
-  void loadGoals();
+  void loadProfile().finally(() => {
+    void loadFinancialData();
+    void loadBudgetPlanning();
+    void loadGoals();
+  });
 }
+
+profileForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  clearErrors(profileForm);
+  const values = Object.fromEntries(new FormData(profileForm));
+  values.monthStartDay = Number(values.monthStartDay);
+  if (values.email.trim().toLowerCase() !== currentProfileEmail && !values.currentPassword) {
+    displayErrors(profileForm, { currentPassword: 'Informe sua senha atual para trocar o e-mail.' });
+    return;
+  }
+  try {
+    setLoading(profileForm, true);
+    const { profile, message } = await api('/api/profile', {
+      method: 'PUT', body: JSON.stringify(values),
+    });
+    currentProfileEmail = profile.email;
+    profileForm.elements.namedItem('currentPassword').value = '';
+    applyPreferences(profile.preferences);
+    document.querySelectorAll('[data-user-name]').forEach((element) => { element.textContent = profile.name; });
+    document.querySelectorAll('[data-first-name]').forEach((element) => { element.textContent = profile.name.split(/\s+/)[0]; });
+    dashboardMonthInput.value = currentMonthKey();
+    reportMonthInput.value = currentMonthKey();
+    budgetMonthInput.value = currentMonthKey();
+    renderAllTransactions();
+    renderMovementHistory();
+    void loadDashboardSummary();
+    void loadMonthlyReport();
+    void loadBudgetPlanning();
+    void loadGoals();
+    showToast(message);
+  } catch (error) {
+    displayErrors(profileForm, error.fields);
+    if (!Object.keys(error.fields || {}).length) showToast(error.message, 'error');
+  } finally {
+    setLoading(profileForm, false);
+  }
+});
 
 document.querySelectorAll('[data-show-register]').forEach((button) => {
   button.addEventListener('click', () => showAuth('register'));
@@ -1551,12 +1642,12 @@ resetForm.addEventListener('submit', async (event) => {
   }
 });
 
-document.querySelector('[data-open-password-change]').addEventListener('click', () => {
+document.querySelectorAll('[data-open-password-change]').forEach((button) => button.addEventListener('click', () => {
   passwordChangeError.hidden = true;
   clearErrors(passwordChangeForm);
   passwordChangeDialog.showModal();
   passwordChangeForm.elements.namedItem('currentPassword').focus();
-});
+}));
 document.querySelectorAll('[data-close-password-dialog]').forEach((button) => {
   button.addEventListener('click', () => passwordChangeDialog.close());
 });

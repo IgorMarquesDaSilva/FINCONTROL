@@ -52,8 +52,13 @@ Nunca versionar `.env`, senhas, tokens, chaves de API ou dumps reais de banco. S
 Antes de abrir um Pull Request, execute:
 
 ```powershell
+npm ci
+node --check server.js
 npm test
+npm audit --omit=dev --audit-level=moderate
 npm run db:check
 ```
 
-O segundo comando requer o MySQL do XAMPP iniciado e um `.env` configurado.
+Use Node.js 24 ou superior. `npm ci` instala exatamente as versões do lockfile. Os testes de integração e `db:check` exigem o MySQL do XAMPP iniciado, o schema do `database/fincontrol_xampp.sql` e um `.env` local configurado. Para reproduzir uma falha da CI, execute os comandos acima nessa ordem e confira também `node --check` para cada arquivo JavaScript alterado.
+
+A branch `main` exige a checagem `Testes e segurança` aprovada. A configuração da proteção está registrada em `docs/branch-protection.json`.

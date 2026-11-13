@@ -11,6 +11,7 @@ const goalRoutes = require('./routes/goal.routes');
 const reportRoutes = require('./routes/report.routes');
 const budgetRoutes = require('./routes/budget.routes');
 const insightsRoutes = require('./routes/insights.routes');
+const profileRoutes = require('./routes/profile.routes');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -44,6 +45,7 @@ app.use('/api/goals', goalRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/insights', insightsRoutes);
+app.use('/api/profile', profileRoutes);
 app.use(express.static(publicDirectory, { extensions: ['html'] }));
 
 app.use('/api', notFound);
