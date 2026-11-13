@@ -30,4 +30,13 @@ module.exports = Object.freeze({
     secret: process.env.JWT_SECRET || 'fincontrol-local-troque-esta-chave',
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   },
+  appBaseUrl: (process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 3000}`).replace(/\/$/, ''),
+  email: {
+    host: process.env.SMTP_HOST || '',
+    port: numberFromEnvironment('SMTP_PORT', 587),
+    secure: String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true',
+    user: process.env.SMTP_USER || '',
+    password: process.env.SMTP_PASSWORD || '',
+    from: process.env.SMTP_FROM || 'FINCONTROL <no-reply@fincontrol.local>',
+  },
 });

@@ -4,6 +4,14 @@ const loginForm = document.querySelector('[data-login-form]');
 const registerForm = document.querySelector('[data-register-form]');
 const loginHeading = document.querySelector('[data-login-heading]');
 const registerHeading = document.querySelector('[data-register-heading]');
+const forgotForm = document.querySelector('[data-forgot-form]');
+const forgotHeading = document.querySelector('[data-forgot-heading]');
+const resetForm = document.querySelector('[data-reset-form]');
+const resetHeading = document.querySelector('[data-reset-heading]');
+const passwordChangeDialog = document.querySelector('[data-password-dialog]');
+const passwordChangeForm = document.querySelector('[data-password-change-form]');
+const passwordChangeError = document.querySelector('[data-password-change-error]');
+const passwordResetToken = new URLSearchParams(window.location.search).get('resetToken') || '';
 const toast = document.querySelector('[data-toast]');
 const sidebar = document.querySelector('[data-sidebar]');
 const dashboardShell = document.querySelector('.dashboard-shell');
@@ -1173,7 +1181,8 @@ function displayErrors(form, errors) {
     if (error) error.textContent = message;
   });
 
-  form.querySelector('[aria-invalid="true"]')?.focus();
+  [...form.querySelectorAll('[aria-invalid="true"]')]
+    .find((field) => field.getClientRects().length > 0)?.focus();
 }
 
 function setLoading(form, loading) {
@@ -1260,7 +1269,13 @@ function closeTransactionDeletion() {
 }
 
 function showAuth(mode = 'login') {
-  const isRegister = mode === 'register';
+  const views = {
+    login: { heading: loginHeading, form: loginForm, title: 'Entrar' },
+    register: { heading: registerHeading, form: registerForm, title: 'Criar conta' },
+    forgot: { heading: forgotHeading, form: forgotForm, title: 'Recuperar senha' },
+    reset: { heading: resetHeading, form: resetForm, title: 'Definir nova senha' },
+  };
+  const activeView = views[mode] || views.login;
   currentUserId = null;
   currentInsights = [];
   insightsList.replaceChildren();
@@ -1269,15 +1284,16 @@ function showAuth(mode = 'login') {
   insightsError.hidden = true;
   authView.hidden = false;
   dashboardView.hidden = true;
-  loginForm.hidden = isRegister;
-  loginHeading.hidden = isRegister;
-  registerForm.hidden = !isRegister;
-  registerHeading.hidden = !isRegister;
-  document.title = `${isRegister ? 'Criar conta' : 'Entrar'} — FINCONTROL`;
-  clearErrors(loginForm);
-  clearErrors(registerForm);
+  Object.values(views).forEach(({ heading, form }) => {
+    heading.hidden = heading !== activeView.heading;
+    form.hidden = form !== activeView.form;
+    clearErrors(form);
+  });
+  resetForm.elements.namedItem('token').value = passwordResetToken;
+  passwordChangeError.hidden = true;
+  document.title = `${activeView.title} — FINCONTROL`;
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  setTimeout(() => (isRegister ? registerForm : loginForm).querySelector('input')?.focus(), 50);
+  setTimeout(() => activeView.form.querySelector('input:not([type="hidden"])')?.focus(), 50);
 }
 
 function showDashboard(user) {
@@ -1310,6 +1326,8 @@ document.querySelectorAll('[data-show-register]').forEach((button) => {
 document.querySelectorAll('[data-show-login]').forEach((button) => {
   button.addEventListener('click', () => showAuth('login'));
 });
+
+document.querySelector('[data-show-forgot]').addEventListener('click', () => showAuth('forgot'));
 
 document.querySelectorAll('[data-toggle-password]').forEach((button) => {
   button.addEventListener('click', () => {
@@ -1376,6 +1394,107 @@ registerForm.addEventListener('submit', async (event) => {
     showToast(error.message, 'error');
   } finally {
     setLoading(registerForm, false);
+  }
+});
+
+forgotForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  clearErrors(forgotForm);
+  try {
+    setLoading(forgotForm, true);
+    const payload = await api('/api/auth/password/forgot', {
+      method: 'POST',
+      body: JSON.stringify({ email: forgotForm.elements.namedItem('email').value }),
+    });
+    forgotForm.reset();
+    showToast(payload.message);
+    showAuth('login');
+  } catch (error) {
+    displayErrors(forgotForm, error.fields);
+    if (!Object.keys(error.fields || {}).length) showToast(error.message, 'error');
+  } finally {
+    setLoading(forgotForm, false);
+  }
+});
+
+resetForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  clearErrors(resetForm);
+  const password = resetForm.elements.namedItem('password').value;
+  const passwordConfirmation = resetForm.elements.namedItem('passwordConfirmation').value;
+  if (password !== passwordConfirmation) {
+    displayErrors(resetForm, { passwordConfirmation: 'As senhas não coincidem.' });
+    return;
+  }
+  try {
+    setLoading(resetForm, true);
+    const payload = await api('/api/auth/password/reset', {
+      method: 'POST',
+      body: JSON.stringify({
+        token: resetForm.elements.namedItem('token').value,
+        password,
+        passwordConfirmation,
+      }),
+    });
+    window.history.replaceState(null, '', window.location.pathname);
+    resetForm.reset();
+    showAuth('login');
+    showToast(payload.message);
+  } catch (error) {
+    displayErrors(resetForm, error.fields);
+    if (!Object.keys(error.fields || {}).length) showToast(error.message, 'error');
+  } finally {
+    setLoading(resetForm, false);
+  }
+});
+
+document.querySelector('[data-open-password-change]').addEventListener('click', () => {
+  passwordChangeError.hidden = true;
+  clearErrors(passwordChangeForm);
+  passwordChangeDialog.showModal();
+  passwordChangeForm.elements.namedItem('currentPassword').focus();
+});
+document.querySelectorAll('[data-close-password-dialog]').forEach((button) => {
+  button.addEventListener('click', () => passwordChangeDialog.close());
+});
+passwordChangeDialog.addEventListener('click', (event) => {
+  if (event.target === passwordChangeDialog) passwordChangeDialog.close();
+});
+passwordChangeDialog.addEventListener('close', () => {
+  passwordChangeForm.reset();
+  clearErrors(passwordChangeForm);
+  passwordChangeError.hidden = true;
+});
+passwordChangeForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  clearErrors(passwordChangeForm);
+  passwordChangeError.hidden = true;
+  const password = passwordChangeForm.elements.namedItem('password').value;
+  const passwordConfirmation = passwordChangeForm.elements.namedItem('passwordConfirmation').value;
+  const errors = {};
+  if (password !== passwordConfirmation) errors.passwordConfirmation = 'As senhas não coincidem.';
+  if (Object.keys(errors).length) {
+    displayErrors(passwordChangeForm, errors);
+    return;
+  }
+  try {
+    setLoading(passwordChangeForm, true);
+    const payload = await api('/api/auth/password/change', {
+      method: 'POST',
+      body: JSON.stringify({
+        currentPassword: passwordChangeForm.elements.namedItem('currentPassword').value,
+        password,
+        passwordConfirmation,
+      }),
+    });
+    passwordChangeDialog.close();
+    showToast(payload.message);
+  } catch (error) {
+    displayErrors(passwordChangeForm, error.fields);
+    passwordChangeError.textContent = error.message;
+    passwordChangeError.hidden = false;
+  } finally {
+    setLoading(passwordChangeForm, false);
   }
 });
 
@@ -1833,4 +1952,5 @@ async function restoreSession() {
   }
 }
 
-restoreSession();
+if (passwordResetToken) showAuth('reset');
+else restoreSession();

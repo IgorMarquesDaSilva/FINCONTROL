@@ -89,6 +89,7 @@
               <span class="spinner" aria-hidden="true"></span>
             </button>
 
+            <p class="auth-switch auth-forgot-link"><button type="button" data-show-forgot>Esqueceu sua senha?</button></p>
             <p class="auth-switch">Ainda não tem uma conta? <button type="button" data-show-register>Comece agora</button></p>
           </form>
 
@@ -150,6 +151,45 @@
             <p class="auth-switch">Já tem uma conta? <button type="button" data-show-login>Entre por aqui</button></p>
           </form>
 
+          <div class="auth-heading" data-forgot-heading hidden>
+            <span class="eyebrow"><span></span> Vamos ajudar</span>
+            <h2>Recupere seu acesso</h2>
+            <p>Informe seu e-mail. Se houver uma conta, enviaremos as instruções para redefinir a senha.</p>
+          </div>
+
+          <form class="auth-form" data-forgot-form novalidate hidden>
+            <div class="form-field">
+              <label for="forgot-email">E-mail da conta</label>
+              <div class="input-wrap"><input id="forgot-email" name="email" type="email" autocomplete="email" maxlength="191" placeholder="voce@exemplo.com" required></div>
+              <span class="field-error" data-error-for="email"></span>
+            </div>
+            <button class="primary-button" type="submit"><span data-button-label>Enviar instruções</span><span class="spinner" aria-hidden="true"></span></button>
+            <p class="auth-switch"><button type="button" data-show-login>Voltar para entrar</button></p>
+          </form>
+
+          <div class="auth-heading" data-reset-heading hidden>
+            <span class="eyebrow"><span></span> Novo começo</span>
+            <h2>Defina uma nova senha</h2>
+            <p>Escolha uma senha com pelo menos 8 caracteres, incluindo maiúscula, minúscula e número.</p>
+          </div>
+
+          <form class="auth-form" data-reset-form novalidate hidden>
+            <input name="token" type="hidden">
+            <div class="form-field">
+              <label for="reset-password">Nova senha</label>
+              <div class="input-wrap"><input id="reset-password" name="password" type="password" autocomplete="new-password" required></div>
+              <span class="field-error" data-error-for="password"></span>
+            </div>
+            <div class="form-field">
+              <label for="reset-confirmation">Confirmar nova senha</label>
+              <div class="input-wrap"><input id="reset-confirmation" name="passwordConfirmation" type="password" autocomplete="new-password" required></div>
+              <span class="field-error" data-error-for="passwordConfirmation"></span>
+            </div>
+            <span class="field-error" data-error-for="token"></span>
+            <button class="primary-button" type="submit"><span data-button-label>Redefinir senha</span><span class="spinner" aria-hidden="true"></span></button>
+            <p class="auth-switch"><button type="button" data-show-login>Voltar para entrar</button></p>
+          </form>
+
           <p class="security-note">
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.6 2.7 8.2 7 10 4.3-1.8 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>
             Seus dados são protegidos e sua senha nunca é armazenada em texto aberto.
@@ -181,6 +221,7 @@
             <span data-user-initial>A</span>
             <div><strong data-user-name>Usuário</strong><small>Conta pessoal</small></div>
           </div>
+          <button class="logout-button" type="button" data-open-password-change><span aria-hidden="true">↻</span> Alterar senha</button>
           <button class="logout-button" type="button" data-logout><span>↪</span> Sair da conta</button>
         </div>
       </aside>
@@ -545,6 +586,20 @@
         </div>
       </div>
     </section>
+
+    <dialog class="edit-dialog" data-password-dialog aria-labelledby="password-change-title">
+      <div class="edit-dialog__header">
+        <div><span class="eyebrow"><span></span> Segurança da conta</span><h2 id="password-change-title">Alterar senha</h2><p>Confirme sua senha atual para continuar.</p></div>
+        <button class="edit-dialog__close" type="button" data-close-password-dialog aria-label="Fechar alteração de senha">×</button>
+      </div>
+      <form class="edit-form" data-password-change-form novalidate>
+        <div class="form-field"><label for="current-password">Senha atual</label><div class="input-wrap"><input id="current-password" name="currentPassword" type="password" autocomplete="current-password" required></div><span class="field-error" data-error-for="currentPassword"></span></div>
+        <div class="form-field"><label for="new-password">Nova senha</label><div class="input-wrap"><input id="new-password" name="password" type="password" autocomplete="new-password" required></div><span class="field-error" data-error-for="password"></span></div>
+        <div class="form-field"><label for="new-password-confirmation">Confirmar nova senha</label><div class="input-wrap"><input id="new-password-confirmation" name="passwordConfirmation" type="password" autocomplete="new-password" required></div><span class="field-error" data-error-for="passwordConfirmation"></span></div>
+        <p class="password-change-error" data-password-change-error role="alert" hidden></p>
+        <div class="edit-dialog__actions"><button class="secondary-button" type="button" data-close-password-dialog>Cancelar</button><button class="primary-button primary-button--compact" type="submit"><span data-button-label>Salvar nova senha</span><span class="spinner" aria-hidden="true"></span></button></div>
+      </form>
+    </dialog>
 
     <dialog class="edit-dialog" data-edit-dialog aria-labelledby="edit-transaction-title">
       <div class="edit-dialog__header">

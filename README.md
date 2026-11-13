@@ -45,6 +45,8 @@ O padrão já está preparado para o MySQL do XAMPP, com usuário `root` sem sen
 
 Antes de publicar, defina uma chave longa e aleatória em `JWT_SECRET`.
 
+Para enviar links de recuperação por e-mail, configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` e `APP_BASE_URL` no `.env`. Em desenvolvimento sem SMTP, o link temporário é impresso no terminal do servidor; ele não aparece na resposta da API. Tokens expiram em 30 minutos e ficam armazenados no banco apenas como hash.
+
 ### 3. Crie o banco pelo phpMyAdmin
 
 1. Inicie **Apache** e **MySQL** no painel do XAMPP.
@@ -85,13 +87,13 @@ npm test
 
 `npm test` executa em sequência os testes unitários e os testes de integração e ponta a ponta. Os testes unitários impõem cobertura mínima de 90% das linhas e 70% dos ramos nas regras financeiras de orçamento, dashboard, metas e insights. Os cenários HTTP cobrem autenticação, movimentações, orçamentos, metas, dashboard, relatório e insights, incluindo isolamento entre usuários.
 
-O comando completo requer MySQL disponível e configuração do banco em `.env` (ou os padrões do XAMPP):
+O comando completo requer MySQL disponível, a migration `database/migrations/003_password_recovery.sql` aplicada em bancos existentes e configuração do banco em `.env` (ou os padrões do XAMPP):
 
 ```powershell
 npm test
 ```
 
-Os testes de integração criam usuários e dados temporários exclusivos e os removem ao terminar. Também é possível rodar apenas `npm run test:unit` sem MySQL ou `npm run test:integration` com MySQL ativo.
+Os testes de integração criam usuários e dados temporários exclusivos e os removem ao terminar. Os cenários de autenticação cobrem solicitação genérica, redefinição de uso único, expiração, alteração autenticada e encerramento de sessões antigas. Também é possível rodar apenas `npm run test:unit` sem MySQL ou `npm run test:integration` com MySQL ativo.
 
 ## Estrutura
 

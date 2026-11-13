@@ -12,10 +12,11 @@ async function authenticate(request, _response, next) {
     const payload = authService.verifyToken(token);
     const user = await authService.findUserById(payload.sub);
 
-    if (!user) {
+    if (!user || Number(payload.sv || 0) !== Number(user.session_version || 0)) {
       return next(new AppError('Sua sessao nao e mais valida.', 401, 'invalid_session'));
     }
 
+    delete user.session_version;
     request.user = user;
     return next();
   } catch (error) {
